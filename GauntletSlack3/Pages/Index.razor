@@ -1,0 +1,20 @@
+@page "/"
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/chat", replace: true);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login", replace: true);
+        }
+    }
+} 

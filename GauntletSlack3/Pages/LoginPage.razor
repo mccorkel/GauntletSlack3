@@ -1,0 +1,38 @@
+@page "/login"
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+<div class="login-container">
+    <div class="login-box">
+        <h2>Welcome to SlackClone</h2>
+        <button class="btn btn-primary" @onclick="SignIn">
+            Sign In
+        </button>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/chat", replace: true);
+        }
+    }
+
+    private async Task SignIn()
+    {
+        try
+        {
+            NavigationManager.NavigateToLogin("authentication/login");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+    }
+} 
