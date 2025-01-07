@@ -1,0 +1,37 @@
+@page "/test-message"
+@using GauntletSlack3.Services
+@using GauntletSlack3.Shared.Models
+@inject IMessageService MessageService
+
+<h3>Test Message</h3>
+
+<button @onclick="TestConnection">Test Connection</button>
+<button @onclick="SaveTestMessage">Save Test Message</button>
+
+@if (_message != null)
+{
+    <p>Last Message: @_message.Content</p>
+}
+
+@code {
+    private Message _message;
+
+    private async Task TestConnection()
+    {
+        var result = await MessageService.TestConnection();
+        Console.WriteLine($"Connection test: {result}");
+    }
+
+    private async Task SaveTestMessage()
+    {
+        var message = new Message
+        {
+            Content = "Test message " + DateTime.Now.ToString(),
+            UserId = "testUser",
+            CreatedAt = DateTime.Now,
+            ChannelId = 1
+        };
+
+        _message = await MessageService.SaveMessage(message);
+    }
+} 

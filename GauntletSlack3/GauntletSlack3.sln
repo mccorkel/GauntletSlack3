@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GauntletSlack3", "GauntletS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GauntletSlack3.Api", "..\GauntletSlack3.Api\GauntletSlack3.Api.csproj", "{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GauntletSlack3.Shared", "..\GauntletSlack3.Shared\GauntletSlack3.Shared.csproj", "{010FB5EF-C570-47F5-A652-EC29E687ED60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Release|Any CPU.Build.0 = Release|Any CPU
+		{010FB5EF-C570-47F5-A652-EC29E687ED60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{010FB5EF-C570-47F5-A652-EC29E687ED60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{010FB5EF-C570-47F5-A652-EC29E687ED60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{010FB5EF-C570-47F5-A652-EC29E687ED60}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

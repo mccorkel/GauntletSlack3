@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using GauntletSlack3.Api.Data;
+using GauntletSlack3.Shared.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -12,27 +13,28 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<SlackDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add CORS policy
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowBlazorClient",
-        builder => builder
-            .WithOrigins("https://localhost:7225") // Add your Blazor client URL
-            .AllowAnyMethod()
-            .AllowAnyHeader());
-});
+// Add CORS
+builder.Services.AddCors();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else 
+{
+    app.UseHttpsRedirection(); // Only redirect in production
+}
 
-app.UseHttpsRedirection();
-app.UseCors("AllowBlazorClient");
+app.UseCors(x => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .SetIsOriginAllowed(origin => true)
+    .AllowCredentials());
+
 app.UseAuthorization();
 app.MapControllers();
 

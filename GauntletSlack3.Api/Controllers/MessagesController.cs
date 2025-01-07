@@ -1,39 +1,42 @@
 using Microsoft.AspNetCore.Mvc;
-using GauntletSlack3.Api.Data;
 using GauntletSlack3.Shared.Models;
+using GauntletSlack3.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
-namespace GauntletSlack3.Api.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class MessagesController : ControllerBase
+namespace GauntletSlack3.Api.Controllers
 {
-    private readonly SlackDbContext _context;
-
-    public MessagesController(SlackDbContext context)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class MessagesController : ControllerBase
     {
-        _context = context;
-    }
+        private readonly SlackDbContext _context;
 
-    [HttpPost]
-    public async Task<ActionResult<Message>> PostMessage(Message message)
-    {
-        _context.Messages.Add(message);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetMessage), new { id = message.Id }, message);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Message>> GetMessage(int id)
-    {
-        var message = await _context.Messages.FindAsync(id);
-
-        if (message == null)
+        public MessagesController(SlackDbContext context)
         {
-            return NotFound();
+            _context = context;
         }
 
-        return message;
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { status = "connected" });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Message>> Post(Message message)
+        {
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+            return Ok(message);
+        }
+
+        [HttpGet("{channelId}")]
+        public async Task<ActionResult<List<Message>>> Get(int channelId)
+        {
+            var messages = await _context.Messages
+                .Where(m => m.ChannelId == channelId)
+                .ToListAsync();
+            return Ok(messages);
+        }
     }
 } 
