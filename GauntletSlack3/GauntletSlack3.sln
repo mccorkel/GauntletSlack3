@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35527.113 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GauntletSlack3", "GauntletSlack3.csproj", "{587B4D78-ACF2-4512-8B00-EBC156BBB7BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GauntletSlack3.Api", "..\GauntletSlack3.Api\GauntletSlack3.Api.csproj", "{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{587B4D78-ACF2-4512-8B00-EBC156BBB7BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{587B4D78-ACF2-4512-8B00-EBC156BBB7BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{587B4D78-ACF2-4512-8B00-EBC156BBB7BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E929F23-A7CB-4F4D-A559-EBD2CC15D477}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

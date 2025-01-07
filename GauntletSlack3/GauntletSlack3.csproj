@@ -4,12 +4,20 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GauntletSlack3.Shared\GauntletSlack3.Shared.csproj" />
   </ItemGroup>
 
 </Project>
