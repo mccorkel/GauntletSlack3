@@ -30,7 +30,7 @@ public class SlackService
         return await response.Content.ReadFromJsonAsync<Message>() ?? message;
     }
 
-    public async Task<bool> JoinChannelAsync(string userId, string userName, int channelId)
+    public async Task<bool> JoinChannelAsync(int userId, string userName, int channelId)
     {
         var channelUser = new ChannelUser
         {

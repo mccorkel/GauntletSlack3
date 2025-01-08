@@ -23,10 +23,14 @@ public class SlackDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.Email).IsRequired();
-            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsAdmin).IsRequired();
 
             // Index for email lookups
             entity.HasIndex(e => e.Email).IsUnique();
+
+            entity.HasMany(u => u.Memberships)
+                .WithOne(cm => cm.User)
+                .HasForeignKey(cm => cm.UserId);
         });
 
         // Configure Channel
@@ -91,7 +95,7 @@ public class SlackDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.User)
-                .WithMany(e => e.ChannelMemberships)
+                .WithMany(e => e.Memberships)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -105,7 +109,7 @@ public class SlackDbContext : DbContext
 
     private void SeedData(ModelBuilder modelBuilder)
     {
-        var adminId = "admin";
+        var adminId = 0;
         var now = DateTime.UtcNow;
 
         // Seed admin user
@@ -115,8 +119,7 @@ public class SlackDbContext : DbContext
                 Id = adminId,
                 Name = "Admin",
                 Email = "admin@example.com",
-                IsAdmin = true,
-                CreatedAt = now
+                IsAdmin = true
             }
         );
 

@@ -3,7 +3,7 @@ namespace GauntletSlack3.Shared.Models
     public class ChannelMembership
     {
         public int ChannelId { get; set; }
-        public string UserId { get; set; } = string.Empty;
+        public int UserId { get; set; }
         public DateTime JoinedAt { get; set; }
         public bool IsMuted { get; set; }
 

@@ -1,0 +1,69 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using GauntletSlack3.Shared.Models
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IMessageService MessageService
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Gauntlet Slack</a>
+    </div>
+</div>
+
+<AuthorizeView>
+    <Authorized>
+        <nav class="flex-column">
+            <div class="nav-item px-3">
+                <h5 class="mb-0">Channels</h5>
+            </div>
+
+            @if (channels?.Any() == true)
+            {
+                @foreach (var channel in channels)
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="@($"channel/{channel.Id}")">
+                            <span class="oi oi-chat" aria-hidden="true"></span> @channel.Name
+                        </NavLink>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="nav-item px-3">
+                    <em>No channels available</em>
+                </div>
+            }
+        </nav>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private List<Channel>? channels;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        userId = authState.User.FindFirst(c => c.Type == "sub")?.Value;
+        
+        if (userId != null)
+        {
+            await LoadChannels();
+            await RedirectToFirstChannel();
+        }
+    }
+
+    private async Task LoadChannels()
+    {
+        channels = await MessageService.GetChannels();
+    }
+
+    private async Task RedirectToFirstChannel()
+    {
+        if (channels?.Any() == true && Navigation.Uri.EndsWith("/"))
+        {
+            Navigation.NavigateTo($"channel/{channels[0].Id}");
+        }
+    }
+} 

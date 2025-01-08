@@ -1,98 +1,74 @@
 using System.Net.Http.Json;
 using GauntletSlack3.Shared.Models;
 
-namespace GauntletSlack3.Services
+namespace GauntletSlack3.Services;
+
+public class MessageService : IMessageService
 {
-    public class MessageService : IMessageService
+    private readonly HttpClient _http;
+
+    public MessageService(HttpClient http)
     {
-        private readonly HttpClient _http;
+        _http = http;
+    }
 
-        public MessageService(HttpClient http)
+    public async Task<List<Channel>> GetChannels()
+    {
+        try
         {
-            _http = http;
+            var channels = await _http.GetFromJsonAsync<List<Channel>>("api/channels");
+            return channels ?? new List<Channel>();
         }
-
-        public async Task<List<Message>> GetChannelMessages(int channelId)
+        catch (Exception ex)
         {
-            return await _http.GetFromJsonAsync<List<Message>>($"api/messages/channel/{channelId}") 
-                ?? new List<Message>();
+            Console.WriteLine($"Error fetching channels: {ex.Message}");
+            return new List<Channel>();
         }
+    }
 
-        public async Task<Message> SaveMessage(int channelId, Message message)
+    public async Task<Channel> SaveChannel(Channel channel)
+    {
+        try
         {
-            try
-            {
-                var messageToSend = new Message
-                {
-                    Content = message.Content,
-                    UserId = message.UserId,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                var response = await _http.PostAsJsonAsync($"api/messages/channel/{channelId}", messageToSend);
-                
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"API returned {response.StatusCode}: {error}");
-                }
-
-                return await response.Content.ReadFromJsonAsync<Message>() 
-                    ?? throw new Exception("Null response from API");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in SaveMessage: {ex.Message}");
-                throw;
-            }
+            var response = await _http.PostAsJsonAsync("api/channels", channel);
+            response.EnsureSuccessStatusCode();
+            var savedChannel = await response.Content.ReadFromJsonAsync<Channel>();
+            return savedChannel ?? channel;
         }
-
-        public async Task<List<Channel>> GetChannels()
+        catch (Exception ex)
         {
-            return await _http.GetFromJsonAsync<List<Channel>>("api/channels") 
-                ?? new List<Channel>();
+            Console.WriteLine($"Error saving channel: {ex.Message}");
+            return channel;
         }
+    }
 
-        public async Task<Channel> SaveChannel(Channel channel)
+    public async Task<List<Message>> GetChannelMessages(int channelId)
+    {
+        try
         {
-            try
-            {
-                // Don't send the collections
-                var channelToSend = new Channel
-                {
-                    Name = channel.Name,
-                    Type = channel.Type
-                };
-
-                var response = await _http.PostAsJsonAsync("api/channels", channelToSend);
-                
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"API returned {response.StatusCode}: {error}");
-                }
-
-                return await response.Content.ReadFromJsonAsync<Channel>() 
-                    ?? throw new Exception("Null response from API");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in SaveChannel: {ex.Message}");
-                throw;
-            }
+            var messages = await _http.GetFromJsonAsync<List<Message>>($"api/channels/{channelId}/messages");
+            return messages ?? new List<Message>();
         }
-
-        public async Task<bool> TestConnection()
+        catch (Exception ex)
         {
-            try
-            {
-                var response = await _http.GetAsync("api/messages/test");
-                return response.IsSuccessStatusCode;
-            }
-            catch
-            {
-                return false;
-            }
+            Console.WriteLine($"Error fetching messages: {ex.Message}");
+            return new List<Message>();
+        }
+    }
+
+    public async Task<Message> SaveMessage(int channelId, Message message)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync($"api/channels/{channelId}/messages", message);
+            response.EnsureSuccessStatusCode();
+            var savedMessage = await response.Content.ReadFromJsonAsync<Message>();
+            return savedMessage ?? message;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving message: {ex.Message}");
+            return message;
         }
     }
 } 

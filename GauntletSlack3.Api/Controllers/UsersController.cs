@@ -21,7 +21,6 @@ namespace GauntletSlack3.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser([FromBody] User user)
         {
-            user.CreatedAt = DateTime.UtcNow;
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return Ok(user);
@@ -36,7 +35,7 @@ namespace GauntletSlack3.Api.Controllers
         }
 
         [HttpPut("{userId}")]
-        public async Task<ActionResult<User>> UpdateUser(string userId, [FromBody] User user)
+        public async Task<ActionResult<User>> UpdateUser(int userId, [FromBody] User user)
         {
             if (userId != user.Id) return BadRequest();
             

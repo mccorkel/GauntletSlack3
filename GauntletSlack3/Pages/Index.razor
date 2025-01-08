@@ -1,20 +1,39 @@
 @page "/"
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuthenticationStateProvider AuthStateProvider
+
+@if (isLoading)
+{
+    <div class="loading-container visible">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+}
+else
+{
+    <div class="login-container">
+        <h2>Welcome to Gauntlet Slack</h2>
+        <button class="btn btn-primary" @onclick="RedirectToAuth">
+            Sign in
+        </button>
+    </div>
+}
 
 @code {
+    private bool isLoading = true;
+
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated ?? false)
+        {
+            NavigationManager.NavigateTo("/chat", forceLoad: false);
+        }
+        isLoading = false;
+    }
 
-        if (isAuthenticated)
-        {
-            NavigationManager.NavigateTo("/chat", replace: true);
-        }
-        else
-        {
-            NavigationManager.NavigateTo("/login", replace: true);
-        }
+    private void RedirectToAuth()
+    {
+        NavigationManager.NavigateTo("/authentication/login");
     }
 } 

@@ -1,0 +1,47 @@
+@page "/channel/{Id:int}"
+@using GauntletSlack3.Shared.Models
+@inject HttpClient Http
+
+@if (channel != null)
+{
+    <h3>@channel.Name</h3>
+
+    @if (channel.Messages != null && channel.Messages.Any())
+    {
+        <div class="message-container">
+            @foreach (var message in channel.Messages.OrderBy(m => m.CreatedAt))
+            {
+                <div class="message">
+                    <p>@message.Content</p>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private GauntletSlack3.Shared.Models.Channel? channel;
+    private string newMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadChannel();
+    }
+
+    private async Task LoadChannel()
+    {
+        channel = await Http.GetFromJsonAsync<GauntletSlack3.Shared.Models.Channel>($"api/channels/{Id}");
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrEmpty(newMessage)) return;
+
+        // Create and send message logic here
+        newMessage = string.Empty;
+        await LoadChannel();
+    }
+} 

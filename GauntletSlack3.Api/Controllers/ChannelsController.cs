@@ -72,7 +72,7 @@ namespace GauntletSlack3.Api.Controllers
         }
 
         [HttpPost("{channelId}/users")]
-        public async Task<ActionResult> AddUserToChannel(int channelId, [FromBody] string userId)
+        public async Task<ActionResult> AddUserToChannel(int channelId, [FromBody] int userId)
         {
             var membership = new ChannelMembership
             {
@@ -87,7 +87,7 @@ namespace GauntletSlack3.Api.Controllers
         }
 
         [HttpDelete("{channelId}/users/{userId}")]
-        public async Task<ActionResult> RemoveUserFromChannel(int channelId, string userId)
+        public async Task<ActionResult> RemoveUserFromChannel(int channelId, int userId)
         {
             var membership = await _context.ChannelMemberships
                 .FirstOrDefaultAsync(m => m.ChannelId == channelId && m.UserId == userId);
