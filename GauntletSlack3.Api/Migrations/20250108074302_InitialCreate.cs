@@ -105,17 +105,17 @@ namespace GauntletSlack3.Api.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "CreatedAt", "Email", "IsAdmin", "Name" },
-                values: new object[] { "admin", new DateTime(2025, 1, 8, 7, 15, 0, 711, DateTimeKind.Utc).AddTicks(6858), "admin@example.com", true, "Admin" });
+                values: new object[] { "admin", new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210), "admin@example.com", true, "Admin" });
 
             migrationBuilder.InsertData(
                 table: "Channels",
                 columns: new[] { "Id", "CreatedAt", "Name", "OwnerId", "Type" },
-                values: new object[] { 1, new DateTime(2025, 1, 8, 7, 15, 0, 711, DateTimeKind.Utc).AddTicks(6858), "general", "admin", "public" });
+                values: new object[] { 1, new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210), "general", "admin", "public" });
 
             migrationBuilder.InsertData(
                 table: "ChannelMemberships",
                 columns: new[] { "ChannelId", "UserId", "IsMuted", "JoinedAt" },
-                values: new object[] { 1, "admin", false, new DateTime(2025, 1, 8, 7, 15, 0, 711, DateTimeKind.Utc).AddTicks(6858) });
+                values: new object[] { 1, "admin", false, new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChannelMemberships_UserId",

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GauntletSlack3.Api.Migrations
 {
     [DbContext(typeof(SlackDbContext))]
-    [Migration("20250108071501_InitialCreate")]
+    [Migration("20250108074302_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -60,7 +60,7 @@ namespace GauntletSlack3.Api.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 1, 8, 7, 15, 0, 711, DateTimeKind.Utc).AddTicks(6858),
+                            CreatedAt = new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210),
                             Name = "general",
                             OwnerId = "admin",
                             Type = "public"
@@ -93,7 +93,7 @@ namespace GauntletSlack3.Api.Migrations
                             ChannelId = 1,
                             UserId = "admin",
                             IsMuted = false,
-                            JoinedAt = new DateTime(2025, 1, 8, 7, 15, 0, 711, DateTimeKind.Utc).AddTicks(6858)
+                            JoinedAt = new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210)
                         });
                 });
 
@@ -158,7 +158,7 @@ namespace GauntletSlack3.Api.Migrations
                         new
                         {
                             Id = "admin",
-                            CreatedAt = new DateTime(2025, 1, 8, 7, 15, 0, 711, DateTimeKind.Utc).AddTicks(6858),
+                            CreatedAt = new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210),
                             Email = "admin@example.com",
                             IsAdmin = true,
                             Name = "Admin"
