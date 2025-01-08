@@ -1,13 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using GauntletSlack3.Api.Data;
 using GauntletSlack3.Shared.Models;
+using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "GauntletSlack API", 
+        Version = "v1",
+        Description = "A Slack-like API for team communication"
+    });
+});
 
 // Add DbContext
 builder.Services.AddDbContext<SlackDbContext>(options =>
@@ -22,7 +37,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "GauntletSlack API V1");
+    });
 }
 else 
 {

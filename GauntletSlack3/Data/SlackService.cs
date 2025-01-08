@@ -35,8 +35,7 @@ public class SlackService
         var channelUser = new ChannelUser
         {
             ChannelId = channelId,
-            UserId = userId,
-            UserName = userName
+            UserId = userId
         };
 
         var response = await _httpClient.PostAsJsonAsync($"api/channels/{channelId}/join", channelUser);

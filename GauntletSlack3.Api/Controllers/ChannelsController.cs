@@ -1,51 +1,102 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GauntletSlack3.Api.Data;
 using GauntletSlack3.Shared.Models;
+using GauntletSlack3.Api.Data;
 
-namespace GauntletSlack3.Api.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class ChannelsController : ControllerBase
+namespace GauntletSlack3.Api.Controllers
 {
-    private readonly SlackDbContext _context;
-
-    public ChannelsController(SlackDbContext context)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ChannelsController : ControllerBase
     {
-        _context = context;
-    }
+        private readonly SlackDbContext _context;
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Channel>>> GetChannels([FromQuery] string userId)
-    {
-        return await _context.Channels
-            .Include(c => c.ChannelUsers)
-            .Where(c => c.Type == "public" || 
-                       c.ChannelUsers.Any(cu => cu.UserId == userId))
-            .ToListAsync();
-    }
-
-    [HttpGet("{channelId}/messages")]
-    public async Task<ActionResult<IEnumerable<Message>>> GetChannelMessages(int channelId)
-    {
-        return await _context.Messages
-            .Where(m => m.ChannelId == channelId)
-            .OrderBy(m => m.CreatedAt)
-            .ToListAsync();
-    }
-
-    [HttpPost("{channelId}/join")]
-    public async Task<IActionResult> JoinChannel(int channelId, ChannelUser channelUser)
-    {
-        if (channelId != channelUser.ChannelId)
+        public ChannelsController(SlackDbContext context)
         {
-            return BadRequest();
+            _context = context;
         }
 
-        _context.ChannelUsers.Add(channelUser);
-        await _context.SaveChangesAsync();
+        [HttpPost]
+        public async Task<ActionResult<Channel>> CreateChannel([FromBody] Channel channel)
+        {
+            channel.CreatedAt = DateTime.UtcNow;
+            _context.Channels.Add(channel);
+            await _context.SaveChangesAsync();
+            return Ok(channel);
+        }
 
-        return Ok();
+        [HttpGet("{channelId}")]
+        public async Task<ActionResult<Channel>> GetChannel(int channelId)
+        {
+            var channel = await _context.Channels
+                .Include(c => c.Owner)
+                .Include(c => c.Memberships!)
+                .ThenInclude(m => m.User)
+                .FirstOrDefaultAsync(c => c.Id == channelId);
+
+            if (channel == null) return NotFound();
+            return Ok(channel);
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<Channel>>> GetChannels()
+        {
+            var channels = await _context.Channels
+                .Include(c => c.Owner)
+                .Include(c => c.Memberships!)
+                .ThenInclude(m => m.User)
+                .ToListAsync();
+
+            return Ok(channels);
+        }
+
+        [HttpPut("{channelId}")]
+        public async Task<ActionResult<Channel>> UpdateChannel(int channelId, [FromBody] Channel channel)
+        {
+            if (channelId != channel.Id) return BadRequest();
+            
+            _context.Entry(channel).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Ok(channel);
+        }
+
+        [HttpDelete("{channelId}")]
+        public async Task<ActionResult> DeleteChannel(int channelId)
+        {
+            var channel = await _context.Channels.FindAsync(channelId);
+            if (channel == null) return NotFound();
+            
+            _context.Channels.Remove(channel);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost("{channelId}/users")]
+        public async Task<ActionResult> AddUserToChannel(int channelId, [FromBody] string userId)
+        {
+            var membership = new ChannelMembership
+            {
+                ChannelId = channelId,
+                UserId = userId,
+                JoinedAt = DateTime.UtcNow
+            };
+
+            _context.ChannelMemberships.Add(membership);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpDelete("{channelId}/users/{userId}")]
+        public async Task<ActionResult> RemoveUserFromChannel(int channelId, string userId)
+        {
+            var membership = await _context.ChannelMemberships
+                .FirstOrDefaultAsync(m => m.ChannelId == channelId && m.UserId == userId);
+            
+            if (membership == null) return NotFound();
+            
+            _context.ChannelMemberships.Remove(membership);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
     }
 } 

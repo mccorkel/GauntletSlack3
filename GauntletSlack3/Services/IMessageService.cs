@@ -4,8 +4,9 @@ namespace GauntletSlack3.Services
 {
     public interface IMessageService
     {
+        Task<Message> SaveMessage(int channelId, Message message);
         Task<List<Message>> GetChannelMessages(int channelId);
-        Task<Message> SaveMessage(Message message);
-        Task<bool> TestConnection();
+        Task<Channel> SaveChannel(Channel channel);
+        Task<List<Channel>> GetChannels();
     }
 } 
