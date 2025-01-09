@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GauntletSlack3.Api.Migrations
 {
     [DbContext(typeof(SlackDbContext))]
-    [Migration("20250108074302_InitialCreate")]
+    [Migration("20250108231825_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -40,9 +40,8 @@ namespace GauntletSlack3.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -59,10 +58,10 @@ namespace GauntletSlack3.Api.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210),
+                            Id = -1,
+                            CreatedAt = new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568),
                             Name = "general",
-                            OwnerId = "admin",
+                            OwnerId = -1,
                             Type = "public"
                         });
                 });
@@ -72,8 +71,8 @@ namespace GauntletSlack3.Api.Migrations
                     b.Property<int>("ChannelId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsMuted")
                         .HasColumnType("bit");
@@ -90,10 +89,10 @@ namespace GauntletSlack3.Api.Migrations
                     b.HasData(
                         new
                         {
-                            ChannelId = 1,
-                            UserId = "admin",
+                            ChannelId = -1,
+                            UserId = -1,
                             IsMuted = false,
-                            JoinedAt = new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210)
+                            JoinedAt = new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568)
                         });
                 });
 
@@ -115,9 +114,8 @@ namespace GauntletSlack3.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -130,11 +128,11 @@ namespace GauntletSlack3.Api.Migrations
 
             modelBuilder.Entity("GauntletSlack3.Shared.Models.User", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -157,8 +155,7 @@ namespace GauntletSlack3.Api.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "admin",
-                            CreatedAt = new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210),
+                            Id = -1,
                             Email = "admin@example.com",
                             IsAdmin = true,
                             Name = "Admin"
@@ -185,7 +182,7 @@ namespace GauntletSlack3.Api.Migrations
                         .IsRequired();
 
                     b.HasOne("GauntletSlack3.Shared.Models.User", "User")
-                        .WithMany("ChannelMemberships")
+                        .WithMany("Memberships")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -223,7 +220,7 @@ namespace GauntletSlack3.Api.Migrations
 
             modelBuilder.Entity("GauntletSlack3.Shared.Models.User", b =>
                 {
-                    b.Navigation("ChannelMemberships");
+                    b.Navigation("Memberships");
 
                     b.Navigation("Messages");
 

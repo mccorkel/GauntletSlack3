@@ -1,11 +1,11 @@
 ﻿<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(SharedComponents.Layouts.MainLayout)">
                 <NotAuthorized>
-                    @if (!context.User.Identity.IsAuthenticated)
+                    @if (context.User.Identity?.IsAuthenticated != true)
                     {
-                        <RedirectToLogin />
+                        <RedirectToAuthentication />
                     }
                     else
                     {
@@ -13,10 +13,12 @@
                     }
                 </NotAuthorized>
             </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <p>Sorry, there's nothing at this address.</p>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(SharedComponents.Layouts.MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
             </LayoutView>
         </NotFound>
     </Router>

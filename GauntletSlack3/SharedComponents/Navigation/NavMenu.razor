@@ -1,69 +1,82 @@
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using GauntletSlack3.Services
+@using GauntletSlack3.Services.Interfaces
 @using GauntletSlack3.Shared.Models
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IMessageService MessageService
 @inject NavigationManager Navigation
+@inject IChannelService ChannelService
+@inject IUserStateService UserStateService
+@inject AuthenticationStateProvider AuthStateProvider
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Gauntlet Slack</a>
-    </div>
-</div>
-
-<AuthorizeView>
-    <Authorized>
-        <nav class="flex-column">
-            <div class="nav-item px-3">
-                <h5 class="mb-0">Channels</h5>
+@if (UserStateService.CurrentUserId.HasValue)
+{
+    <div class="nav-menu">
+        <div class="top-row ps-3 navbar navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="">Gauntlet Slack</a>
             </div>
+        </div>
 
-            @if (channels?.Any() == true)
-            {
-                @foreach (var channel in channels)
-                {
+        <AuthorizeView>
+            <Authorized>
+                <nav class="flex-column">
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="@($"channel/{channel.Id}")">
-                            <span class="oi oi-chat" aria-hidden="true"></span> @channel.Name
-                        </NavLink>
+                        <h5 class="mb-0">Channels</h5>
                     </div>
-                }
-            }
-            else
-            {
-                <div class="nav-item px-3">
-                    <em>No channels available</em>
-                </div>
-            }
-        </nav>
-    </Authorized>
-</AuthorizeView>
+
+                    @if (isLoading)
+                    {
+                        <div class="nav-item px-3">
+                            <em>Loading channels...</em>
+                        </div>
+                    }
+                    else if (channels?.Any() == true)
+                    {
+                        @foreach (var channel in channels)
+                        {
+                            <div class="nav-item px-3">
+                                <NavLink class="nav-link" href="@($"channel/{channel.Id}")">
+                                    <span class="oi oi-chat" aria-hidden="true"></span> @channel.Name
+                                </NavLink>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="nav-item px-3">
+                            <em>No channels available</em>
+                        </div>
+                    }
+                </nav>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+}
 
 @code {
     private List<Channel>? channels;
-    private string? userId;
+    private bool isLoading = true;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        userId = authState.User.FindFirst(c => c.Type == "sub")?.Value;
-        
-        if (userId != null)
+        UserStateService.OnUserStateChanged += LoadChannels;
+    }
+
+    private async void LoadChannels()
+    {
+        if (UserStateService.CurrentUserId.HasValue)
         {
-            await LoadChannels();
-            await RedirectToFirstChannel();
+            isLoading = true;
+            channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
+            isLoading = false;
+            StateHasChanged();
         }
     }
 
-    private async Task LoadChannels()
+    public void Dispose()
     {
-        channels = await MessageService.GetChannels();
-    }
-
-    private async Task RedirectToFirstChannel()
-    {
-        if (channels?.Any() == true && Navigation.Uri.EndsWith("/"))
-        {
-            Navigation.NavigateTo($"channel/{channels[0].Id}");
-        }
+        UserStateService.OnUserStateChanged -= LoadChannels;
     }
 } 

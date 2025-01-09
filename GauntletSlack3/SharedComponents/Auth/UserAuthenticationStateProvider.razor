@@ -1,0 +1,44 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using GauntletSlack3.Services.Interfaces
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject IUserStateService UserStateService
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            var email = user.FindFirst(ClaimTypes.Email)?.Value;
+            var name = user.FindFirst(ClaimTypes.Name)?.Value;
+
+            Console.WriteLine($"Authenticated user: {email} - {name}");
+
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(name))
+            {
+                try
+                {
+                    var userId = await UserService.GetOrCreateUserAsync(email, name);
+                    Console.WriteLine($"Created/Retrieved user with ID: {userId}");
+                    UserStateService.CurrentUserId = userId;
+                    UserStateService.CurrentUserName = name;
+                    NavigationManager.NavigateTo("/chat");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error creating user: {ex.Message}");
+                    NavigationManager.NavigateTo("/error");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("User not authenticated");
+        }
+    }
+} 

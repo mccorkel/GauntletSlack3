@@ -109,7 +109,7 @@ public class SlackDbContext : DbContext
 
     private void SeedData(ModelBuilder modelBuilder)
     {
-        var adminId = 0;
+        var adminId = -1;
         var now = DateTime.UtcNow;
 
         // Seed admin user
@@ -127,7 +127,7 @@ public class SlackDbContext : DbContext
         modelBuilder.Entity<Channel>().HasData(
             new Channel
             {
-                Id = 1,
+                Id = -1,
                 Name = "general",
                 Type = "public",
                 OwnerId = adminId,
@@ -139,7 +139,7 @@ public class SlackDbContext : DbContext
         modelBuilder.Entity<ChannelMembership>().HasData(
             new ChannelMembership
             {
-                ChannelId = 1,
+                ChannelId = -1,
                 UserId = adminId,
                 JoinedAt = now,
                 IsMuted = false

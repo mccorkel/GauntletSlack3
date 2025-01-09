@@ -15,11 +15,11 @@ namespace GauntletSlack3.Api.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IsAdmin = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    IsAdmin = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -34,7 +34,7 @@ namespace GauntletSlack3.Api.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OwnerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OwnerId = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -53,7 +53,7 @@ namespace GauntletSlack3.Api.Migrations
                 columns: table => new
                 {
                     ChannelId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
                     JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsMuted = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -81,9 +81,9 @@ namespace GauntletSlack3.Api.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ChannelId = table.Column<int>(type: "int", nullable: false)
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    ChannelId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -104,18 +104,18 @@ namespace GauntletSlack3.Api.Migrations
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "CreatedAt", "Email", "IsAdmin", "Name" },
-                values: new object[] { "admin", new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210), "admin@example.com", true, "Admin" });
+                columns: new[] { "Id", "Email", "IsAdmin", "Name" },
+                values: new object[] { -1, "admin@example.com", true, "Admin" });
 
             migrationBuilder.InsertData(
                 table: "Channels",
                 columns: new[] { "Id", "CreatedAt", "Name", "OwnerId", "Type" },
-                values: new object[] { 1, new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210), "general", "admin", "public" });
+                values: new object[] { -1, new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568), "general", -1, "public" });
 
             migrationBuilder.InsertData(
                 table: "ChannelMemberships",
                 columns: new[] { "ChannelId", "UserId", "IsMuted", "JoinedAt" },
-                values: new object[] { 1, "admin", false, new DateTime(2025, 1, 8, 7, 43, 2, 398, DateTimeKind.Utc).AddTicks(210) });
+                values: new object[] { -1, -1, false, new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChannelMemberships_UserId",

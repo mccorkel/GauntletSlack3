@@ -18,41 +18,54 @@ namespace GauntletSlack3.Api.Controllers
             _context = context;
         }
 
-        [HttpPost]
-        public async Task<ActionResult<User>> CreateUser([FromBody] User user)
+        [HttpGet]
+        public async Task<ActionResult<List<User>>> GetUsers()
         {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return Ok(user);
+            return await _context.Users
+                .Include(u => u.Memberships)
+                .ToListAsync();
         }
 
-        [HttpGet("{userId}")]
-        public async Task<ActionResult<User>> GetUser(string userId)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> GetUser(int id)
         {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
-            return Ok(user);
+            var user = await _context.Users
+                .Include(u => u.Memberships)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return user;
         }
 
-        [HttpPut("{userId}")]
-        public async Task<ActionResult<User>> UpdateUser(int userId, [FromBody] User user)
+        [HttpPost("getorcreate")]
+        public async Task<ActionResult<int>> GetOrCreateUser([FromBody] UserInfo userInfo)
         {
-            if (userId != user.Id) return BadRequest();
-            
-            _context.Entry(user).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return Ok(user);
-        }
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == userInfo.Email);
 
-        [HttpDelete("{userId}")]
-        public async Task<ActionResult> DeleteUser(string userId)
-        {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
-            
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-            return Ok();
+            if (user == null)
+            {
+                user = new User
+                {
+                    Email = userInfo.Email,
+                    Name = userInfo.Name,
+                    IsAdmin = false
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+
+            return user.Id;
         }
+    }
+
+    public class UserInfo
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 } 
