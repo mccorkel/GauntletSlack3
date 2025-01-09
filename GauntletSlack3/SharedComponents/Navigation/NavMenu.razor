@@ -3,80 +3,121 @@
 @using GauntletSlack3.Services
 @using GauntletSlack3.Services.Interfaces
 @using GauntletSlack3.Shared.Models
+@using GauntletSlack3.SharedComponents.Dialogs
+@using GauntletSlack3.SharedComponents.Dialogs
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IMessageService MessageService
 @inject NavigationManager Navigation
 @inject IChannelService ChannelService
 @inject IUserStateService UserStateService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
 
 @if (UserStateService.CurrentUserId.HasValue)
 {
     <div class="nav-menu">
-        <div class="top-row ps-3 navbar navbar-dark">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="">Gauntlet Slack</a>
+        <div class="channels-list">
+            <div class="channels-header">
+                <h3>Channels</h3>
+                <button class="btn btn-sm btn-outline-primary" @onclick="() => showCreateDialog = true">
+                    <span class="oi oi-plus"></span> New
+                </button>
             </div>
-        </div>
-
-        <AuthorizeView>
-            <Authorized>
-                <nav class="flex-column">
-                    <div class="nav-item px-3">
-                        <h5 class="mb-0">Channels</h5>
+            @if (channels != null)
+            {
+                @foreach (var channel in channels)
+                {
+                    <div class="channel-item @(IsCurrentChannel(channel.Id) ? "active" : "")" 
+                         @onclick="() => NavigateToChannel(channel.Id)">
+                        <span class="channel-name"># @channel.Name</span>
                     </div>
-
-                    @if (isLoading)
-                    {
-                        <div class="nav-item px-3">
-                            <em>Loading channels...</em>
-                        </div>
-                    }
-                    else if (channels?.Any() == true)
-                    {
-                        @foreach (var channel in channels)
-                        {
-                            <div class="nav-item px-3">
-                                <NavLink class="nav-link" href="@($"channel/{channel.Id}")">
-                                    <span class="oi oi-chat" aria-hidden="true"></span> @channel.Name
-                                </NavLink>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="nav-item px-3">
-                            <em>No channels available</em>
-                        </div>
-                    }
-                </nav>
-            </Authorized>
-        </AuthorizeView>
+                }
+            }
+            else
+            {
+                <div class="text-muted">
+                    <span class="oi oi-loop-circular spinning"></span> Loading channels...
+                </div>
+            }
+        </div>
     </div>
 }
 
+<CreateChannelDialog 
+    IsVisible="showCreateDialog"
+    IsVisibleChanged="(visible) => showCreateDialog = visible"
+    OnChannelCreated="LoadChannels" />
+
+<style>
+    .joined-channel {
+        color: var(--bs-primary) !important;
+    }
+
+    .available-channel {
+        color: var(--bs-secondary) !important;
+    }
+
+    .nav-section {
+        margin-bottom: 1rem;
+    }
+</style>
+
 @code {
     private List<Channel>? channels;
-    private bool isLoading = true;
+    private bool showCreateDialog;
 
     protected override void OnInitialized()
     {
-        UserStateService.OnUserStateChanged += LoadChannels;
+        UserStateService.OnUserStateChanged += async () => await LoadChannels();
     }
 
-    private async void LoadChannels()
+    protected override async Task OnInitializedAsync()
     {
-        if (UserStateService.CurrentUserId.HasValue)
+        if (!UserStateService.CurrentUserId.HasValue)
         {
-            isLoading = true;
-            channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
-            isLoading = false;
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        await LoadChannels();
+    }
+
+    private bool IsCurrentChannel(int channelId)
+    {
+        var currentUrl = NavigationManager.Uri;
+        return currentUrl.EndsWith($"/channel/{channelId}");
+    }
+
+    private void NavigateToChannel(int channelId)
+    {
+        var currentUrl = NavigationManager.Uri;
+        if (!currentUrl.EndsWith($"/channel/{channelId}"))
+        {
+            NavigationManager.NavigateTo($"/channel/{channelId}");
+        }
+    }
+
+    private async Task LoadChannels()
+    {
+        if (!UserStateService.CurrentUserId.HasValue) return;
+
+        try
+        {
+            var allChannels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
+            channels = allChannels
+                .Where(c => c.Memberships?.Any(m => m.UserId == UserStateService.CurrentUserId) == true)
+                .OrderBy(c => c.Name)
+                .ToList();
             StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading channels: {ex.Message}");
         }
     }
 
     public void Dispose()
     {
-        UserStateService.OnUserStateChanged -= LoadChannels;
+        UserStateService.OnUserStateChanged -= async () => await LoadChannels();
     }
-} 
+}

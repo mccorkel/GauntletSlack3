@@ -1,0 +1,53 @@
+@using GauntletSlack3.Services.Interfaces
+@using GauntletSlack3.Shared.Models
+@inject IChannelService ChannelService
+
+<div class="channel-members-bar">
+    <h5>Channel Members</h5>
+    @if (members != null)
+    {
+        <div class="member-list">
+            @foreach (var member in members)
+            {
+                <div class="member-item">
+                    <span class="oi oi-person"></span>
+                    <span class="member-name">@member.Name</span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .channel-members-bar {
+        width: 250px;
+        padding: 1rem;
+        border-left: 1px solid #e0e0e0;
+        height: 100vh;
+        position: fixed;
+        right: 0;
+        top: 0;
+        background: white;
+    }
+
+    .member-list {
+        margin-top: 1rem;
+    }
+
+    .member-item {
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter] public int ChannelId { get; set; }
+    private List<User>? members;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        members = await ChannelService.GetChannelMembersAsync(ChannelId);
+    }
+} 

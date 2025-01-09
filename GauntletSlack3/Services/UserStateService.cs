@@ -4,16 +4,13 @@ namespace GauntletSlack3.Services
 {
     public class UserStateService : IUserStateService
     {
-        private int? _currentUserId;
         private readonly IUserService _userService;
+        private int? _currentUserId;
 
-        public UserStateService(IUserService userService)
-        {
-            _userService = userService;
-        }
+        public event Action OnUserStateChanged;
 
-        public int? CurrentUserId
-        {
+        public int? CurrentUserId 
+        { 
             get => _currentUserId;
             set
             {
@@ -21,8 +18,13 @@ namespace GauntletSlack3.Services
                 OnUserStateChanged?.Invoke();
             }
         }
+
+        public UserStateService(IUserService userService)
+        {
+            _userService = userService;
+        }
+
         public string? CurrentUserName { get; set; }
-        public event Action OnUserStateChanged;
 
         public async Task InitializeAsync(string email, string name)
         {

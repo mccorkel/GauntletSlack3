@@ -3,81 +3,66 @@
 @using Microsoft.AspNetCore.Authorization
 @using System.Security.Claims
 @using GauntletSlack3.Services.Interfaces
-@using GauntletSlack3.Shared.Models
+@using GauntletSlack3.SharedComponents
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
-@inject IUserService UserService
+@inject IChannelService ChannelService
 @inject IUserStateService UserStateService
+@inject AuthenticationStateProvider AuthStateProvider
 
-@if (isLoading)
-{
-    <div class="loading-container visible">
-        <div class="spinner"></div>
-        <p>Loading...</p>
-    </div>
-}
-else if (currentUser != null)
-{
-    <div>
-        <h3>Welcome, @currentUser.Name!</h3>
-        <p>Email: @currentUser.Email</p>
-        <p>User ID: @currentUser.Id</p>
-    </div>
-}
+<div class="chat-container">
+    @if (isInitialized)
+    {
+        <NavMenu />
+        
+        <div class="chat-content">
+            <h3>Select a channel to start chatting</h3>
+        </div>
+    }
+    else
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    }
+</div>
 
 @code {
-    private bool isLoading = true;
-    private User? currentUser;
+    private bool isInitialized = false;
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("Chat page initialization started");
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        Console.WriteLine($"Auth state retrieved, is authenticated: {authState.User.Identity?.IsAuthenticated}");
+        var user = authState.User;
 
-        var email = authState.User.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
-        var name = authState.User.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+        if (!user.Identity?.IsAuthenticated ?? false)
+        {
+            Console.WriteLine("User is not authenticated");
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        if (!UserStateService.CurrentUserId.HasValue)
+        {
+            Console.WriteLine("User is not initialized");
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        isInitialized = true;
         
-        // Debug: Print all available claims
-        foreach (var claim in authState.User.Claims)
-        {
-            Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
-        }
+        // Get user's channels and redirect to first one if available
+        var channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
+        var userChannels = channels
+            .Where(c => c.Memberships?.Any(m => m.UserId == UserStateService.CurrentUserId) == true)
+            .OrderBy(c => c.Name)
+            .ToList();
         
-        Console.WriteLine($"User claims - Email: {email}, Name: {name}");
-
-        if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(name))
+        if (userChannels.Any())
         {
-            try 
-            {
-                Console.WriteLine("Attempting to get or create user");
-                var userId = await UserService.GetOrCreateUserAsync(email, name);
-                Console.WriteLine($"User ID retrieved/created: {userId}");
-
-                UserStateService.CurrentUserId = userId;
-                UserStateService.CurrentUserName = name;
-                Console.WriteLine("UserStateService updated with user info");
-                
-                // Get full user details
-                Console.WriteLine("Fetching full user details");
-                var users = await UserService.GetUsersAsync();
-                currentUser = users.FirstOrDefault(u => u.Id == userId);
-                Console.WriteLine($"Current user found: {currentUser != null}, ID: {currentUser?.Id}, Name: {currentUser?.Name}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during user initialization: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            }
+            NavigationManager.NavigateTo($"/channel/{userChannels.First().Id}");
         }
-        else
-        {
-            Console.WriteLine("Email or name missing from claims");
-        }
-
-        isLoading = false;
-        Console.WriteLine("Chat page initialization completed");
     }
 }

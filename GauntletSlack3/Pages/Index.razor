@@ -1,6 +1,9 @@
 @page "/"
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IUserStateService UserStateService
+@using System.Security.Claims
+@using GauntletSlack3.Services.Interfaces
 
 @if (isLoading)
 {
@@ -24,9 +27,40 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("Index.OnInitializedAsync started");
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (authState.User.Identity?.IsAuthenticated ?? false)
         {
+            Console.WriteLine("User is authenticated");
+            var email = authState.User.FindFirst("preferred_username")?.Value;
+            var name = authState.User.FindFirst("name")?.Value;
+            
+            // Debug: Print all claims
+            foreach (var claim in authState.User.Claims)
+            {
+                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+            }
+            
+            Console.WriteLine($"Found email: {email}, name: {name}");
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(name))
+            {
+                try {
+                    Console.WriteLine("Initializing user state...");
+                    await UserStateService.InitializeAsync(email, name);
+                    Console.WriteLine($"User state initialized. CurrentUserId: {UserStateService.CurrentUserId}");
+                }
+                catch (Exception ex) {
+                    Console.WriteLine($"Error initializing user: {ex.Message}");
+                    isLoading = false;
+                    return;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Email or name is empty, not redirecting");
+                isLoading = false;
+                return;
+            }
             NavigationManager.NavigateTo("/chat", forceLoad: false);
         }
         isLoading = false;

@@ -1,0 +1,68 @@
+@using GauntletSlack3.Services.Interfaces
+@inject IChannelService ChannelService
+@inject IUserStateService UserStateService
+@inject NavigationManager NavigationManager
+
+<div class="modal @(IsVisible ? "show d-block" : "d-none")" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Channel</h5>
+                <button type="button" class="btn-close" @onclick="OnCancel"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="channelName">Channel Name</label>
+                    <input type="text" class="form-control" id="channelName" 
+                           @bind="channelName" placeholder="e.g. general" />
+                </div>
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <div class="alert alert-danger mt-3">@error</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="CreateChannel">Create Channel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback OnChannelCreated { get; set; }
+
+    private string channelName = string.Empty;
+    private string error = string.Empty;
+
+    private async Task CreateChannel()
+    {
+        if (string.IsNullOrWhiteSpace(channelName))
+        {
+            error = "Channel name is required";
+            return;
+        }
+
+        try
+        {
+            var channel = await ChannelService.CreateChannelAsync(channelName, "public");
+            await ChannelService.JoinChannelAsync(channel.Id, UserStateService.CurrentUserId!.Value);
+            await OnChannelCreated.InvokeAsync();
+            await OnCancel();
+            NavigationManager.NavigateTo($"/channel/{channel.Id}");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private async Task OnCancel()
+    {
+        channelName = string.Empty;
+        error = string.Empty;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+} 
