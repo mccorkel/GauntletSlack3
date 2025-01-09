@@ -27,20 +27,11 @@ public class ChannelService : IChannelService
     {
         Console.WriteLine($"ChannelService: Creating channel {name} of type {type}");
         Console.WriteLine($"Current user ID: {_userStateService.CurrentUserId}");
-        var response = await _httpClient.PostAsJsonAsync("api/Channels", new { 
-            Name = name, 
-            Type = type,
-            UserId = _userStateService.CurrentUserId 
-        });
-        Console.WriteLine($"Response status: {response.StatusCode}");
-        var content = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"Response content: {content}");
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<Channel>() 
-                ?? throw new Exception("Failed to create channel");
-        }
-        throw new Exception($"Failed to create channel: {response.StatusCode} - {content}");
+        var request = new { Name = name, Type = type, UserId = _userStateService.CurrentUserId!.Value };
+        var response = await _httpClient.PostAsJsonAsync("api/Channels", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Channel>() ?? 
+            throw new Exception("Failed to create channel");
     }
 
     public async Task<List<User>> GetChannelMembersAsync(int channelId)

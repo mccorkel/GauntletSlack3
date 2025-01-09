@@ -4,7 +4,6 @@
 @using GauntletSlack3.Services.Interfaces
 @using GauntletSlack3.Shared.Models
 @using GauntletSlack3.SharedComponents.Dialogs
-@using GauntletSlack3.SharedComponents.Dialogs
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IMessageService MessageService
 @inject NavigationManager Navigation
@@ -69,6 +68,7 @@
     protected override void OnInitialized()
     {
         UserStateService.OnUserStateChanged += async () => await LoadChannels();
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
     protected override async Task OnInitializedAsync()
@@ -84,17 +84,29 @@
 
     private bool IsCurrentChannel(int channelId)
     {
-        var currentUrl = NavigationManager.Uri;
-        return currentUrl.EndsWith($"/channel/{channelId}");
+        var currentChannelId = GetCurrentChannelId();
+        return currentChannelId == channelId;
     }
 
     private void NavigateToChannel(int channelId)
     {
         var currentUrl = NavigationManager.Uri;
-        if (!currentUrl.EndsWith($"/channel/{channelId}"))
+        var currentChannelId = GetCurrentChannelId();
+        if (currentChannelId != channelId)
         {
             NavigationManager.NavigateTo($"/channel/{channelId}");
         }
+    }
+
+    private int? GetCurrentChannelId()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var segments = uri.Segments;
+        if (segments.Length >= 3 && segments[1] == "channel/" && int.TryParse(segments[2], out int channelId))
+        {
+            return channelId;
+        }
+        return null;
     }
 
     private async Task LoadChannels()
@@ -116,8 +128,14 @@
         }
     }
 
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
     public void Dispose()
     {
         UserStateService.OnUserStateChanged -= async () => await LoadChannels();
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }

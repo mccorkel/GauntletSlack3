@@ -47,15 +47,19 @@
 
         try
         {
+            Console.WriteLine($"Creating channel: {channelName}");
             var channel = await ChannelService.CreateChannelAsync(channelName, "public");
-            await ChannelService.JoinChannelAsync(channel.Id, UserStateService.CurrentUserId!.Value);
+            Console.WriteLine($"Channel created with ID: {channel.Id}");
+            
             await OnChannelCreated.InvokeAsync();
             await OnCancel();
             NavigationManager.NavigateTo($"/channel/{channel.Id}");
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = $"Error: {ex.Message}";
+            Console.WriteLine($"Error in CreateChannel: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 

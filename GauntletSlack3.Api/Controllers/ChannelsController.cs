@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GauntletSlack3.Shared.Models;
 using GauntletSlack3.Api.Data;
+using Microsoft.Extensions.Logging;
 
 namespace GauntletSlack3.Api.Controllers
 {
@@ -10,10 +11,12 @@ namespace GauntletSlack3.Api.Controllers
     public class ChannelsController : ControllerBase
     {
         private readonly SlackDbContext _context;
+        private readonly ILogger<ChannelsController> _logger;
 
-        public ChannelsController(SlackDbContext context)
+        public ChannelsController(SlackDbContext context, ILogger<ChannelsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -113,26 +116,47 @@ namespace GauntletSlack3.Api.Controllers
         }
 
         [HttpPost("{channelId}/join")]
-        public async Task<ActionResult> JoinChannel(int channelId, [FromBody] int userId)
+        public async Task<IActionResult> JoinChannel(int channelId, [FromBody] int userId)
         {
-            var membership = await _context.ChannelMemberships
-                .FirstOrDefaultAsync(m => m.ChannelId == channelId && m.UserId == userId);
-
-            if (membership != null)
+            try
             {
-                return BadRequest("User is already a member of this channel");
+                // Add logging
+                _logger.LogInformation($"Joining channel {channelId} for user {userId}");
+                
+                var channel = await _context.Channels
+                    .Include(c => c.Memberships)
+                    .FirstOrDefaultAsync(c => c.Id == channelId);
+
+                if (channel == null)
+                {
+                    _logger.LogWarning($"Channel {channelId} not found");
+                    return NotFound();
+                }
+
+                // Check if user is already a member
+                if (channel.Memberships?.Any(m => m.UserId == userId) == true)
+                {
+                    _logger.LogInformation($"User {userId} is already a member of channel {channelId}");
+                    return Ok();
+                }
+
+                var membership = new ChannelMembership
+                {
+                    ChannelId = channelId,
+                    UserId = userId,
+                    JoinedAt = DateTime.UtcNow
+                };
+
+                _context.ChannelMemberships.Add(membership);
+                await _context.SaveChangesAsync();
+
+                return Ok();
             }
-
-            _context.ChannelMemberships.Add(new ChannelMembership
+            catch (Exception ex)
             {
-                ChannelId = channelId,
-                UserId = userId,
-                JoinedAt = DateTime.UtcNow,
-                IsMuted = false
-            });
-
-            await _context.SaveChangesAsync();
-            return Ok();
+                _logger.LogError($"Error joining channel: {ex.Message}");
+                return BadRequest(ex.Message);
+            }
         }
     }
 

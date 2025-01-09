@@ -75,6 +75,11 @@
     private bool isMember;
     private string newMessage = string.Empty;
 
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadChannel();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         if (!UserStateService.CurrentUserId.HasValue)
@@ -83,9 +88,14 @@
             return;
         }
 
+        await LoadChannel();
+    }
+
+    private async Task LoadChannel()
+    {
         try
         {
-            var userId = UserStateService.CurrentUserId.Value;
+            var userId = UserStateService.CurrentUserId!.Value;
             channels = await ChannelService.GetUserChannelsAsync(userId);
             
             currentChannel = channels.FirstOrDefault(c => c.Id == ChannelId);
