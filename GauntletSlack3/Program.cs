@@ -16,6 +16,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChannelService, ChannelService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserStateService, UserStateService>();
+builder.Services.AddSingleton<RealTimeService>();
 
 // Auth configuration
 builder.Services.AddAuthorizationCore();

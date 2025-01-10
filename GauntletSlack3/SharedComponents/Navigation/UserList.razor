@@ -1,8 +1,10 @@
+@implements IAsyncDisposable
 @using GauntletSlack3.Services.Interfaces
 @using GauntletSlack3.Shared.Models
 @using System.Timers
 @inject IUserStateService UserStateService
 @inject IUserService UserService
+@inject RealTimeService RealTimeService
 
 <div class="users-list">
     <div class="users-header">
@@ -79,26 +81,43 @@
 
 @code {
     private List<User>? users;
-    private Timer? refreshTimer;
-    private const int RefreshInterval = 30000; // 30 seconds
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
-        StartRefreshTimer();
-        UserStateService.OnUserStateChanged += async () => await LoadUsers();
-    }
-
-    private void StartRefreshTimer()
-    {
-        refreshTimer = new Timer(RefreshInterval);
-        refreshTimer.Elapsed += async (sender, e) =>
+        try
         {
             await LoadUsers();
-            await InvokeAsync(StateHasChanged);
-        };
-        refreshTimer.AutoReset = true;
-        refreshTimer.Enabled = true;
+            UserStateService.OnUserStateChanged += OnUserStateChanged;
+            if (RealTimeService != null)
+            {
+                RealTimeService.OnUserStatusChanged += HandleUserStatusChanged;
+                await RealTimeService.StartAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in OnInitializedAsync: {ex.Message}");
+        }
+    }
+
+    private void OnUserStateChanged()
+    {
+        _ = InvokeAsync(async () => 
+        {
+            await LoadUsers();
+            StateHasChanged();
+        });
+    }
+
+    private void HandleUserStatusChanged(object? sender, UserStatusChangedEventArgs e)
+    {
+        if (users == null) return;
+        var user = users.FirstOrDefault(u => u.Id == e.UserId);
+        if (user != null)
+        {
+            user.IsOnline = e.IsOnline;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadUsers()
@@ -113,9 +132,12 @@
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        refreshTimer?.Dispose();
-        UserStateService.OnUserStateChanged -= async () => await LoadUsers();
+        UserStateService.OnUserStateChanged -= OnUserStateChanged;
+        if (RealTimeService != null)
+        {
+            RealTimeService.OnUserStatusChanged -= HandleUserStatusChanged;
+        }
     }
 } 
