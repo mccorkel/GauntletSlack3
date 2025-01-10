@@ -83,7 +83,8 @@ namespace GauntletSlack3.Api.Migrations
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     ChannelId = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ParentMessageId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -95,7 +96,41 @@ namespace GauntletSlack3.Api.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
+                        name: "FK_Messages_Messages_ParentMessageId",
+                        column: x => x.ParentMessageId,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_Messages_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MessageReactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MessageId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    Emoji = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MessageReactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MessageReactions_Messages_MessageId",
+                        column: x => x.MessageId,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MessageReactions_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -110,12 +145,12 @@ namespace GauntletSlack3.Api.Migrations
             migrationBuilder.InsertData(
                 table: "Channels",
                 columns: new[] { "Id", "CreatedAt", "Name", "OwnerId", "Type" },
-                values: new object[] { -1, new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568), "general", -1, "public" });
+                values: new object[] { -1, new DateTime(2025, 1, 10, 0, 33, 56, 391, DateTimeKind.Utc).AddTicks(6223), "general", -1, "public" });
 
             migrationBuilder.InsertData(
                 table: "ChannelMemberships",
                 columns: new[] { "ChannelId", "UserId", "IsMuted", "JoinedAt" },
-                values: new object[] { -1, -1, false, new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568) });
+                values: new object[] { -1, -1, false, new DateTime(2025, 1, 10, 0, 33, 56, 391, DateTimeKind.Utc).AddTicks(6223) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChannelMemberships_UserId",
@@ -133,9 +168,24 @@ namespace GauntletSlack3.Api.Migrations
                 column: "OwnerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MessageReactions_MessageId",
+                table: "MessageReactions",
+                column: "MessageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MessageReactions_UserId",
+                table: "MessageReactions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Messages_ChannelId_CreatedAt",
                 table: "Messages",
                 columns: new[] { "ChannelId", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_ParentMessageId",
+                table: "Messages",
+                column: "ParentMessageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_UserId",
@@ -154,6 +204,9 @@ namespace GauntletSlack3.Api.Migrations
         {
             migrationBuilder.DropTable(
                 name: "ChannelMemberships");
+
+            migrationBuilder.DropTable(
+                name: "MessageReactions");
 
             migrationBuilder.DropTable(
                 name: "Messages");

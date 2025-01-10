@@ -62,24 +62,16 @@
 </style>
 
 @code {
-    private List<Channel>? channels;
+    private List<Channel> channels = new();
     private bool showCreateDialog;
-
-    protected override void OnInitialized()
-    {
-        UserStateService.OnUserStateChanged += async () => await LoadChannels();
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
+    private string? error;
 
     protected override async Task OnInitializedAsync()
     {
-        if (!UserStateService.CurrentUserId.HasValue)
-        {
-            NavigationManager.NavigateTo("/");
-            return;
-        }
-
         await LoadChannels();
+        UserStateService.OnUserStateChanged += async () => await LoadChannels();
+        NavigationManager.LocationChanged += OnLocationChanged;
+        ChannelService.OnChannelMembershipChanged += async (s, e) => await RefreshChannels();
     }
 
     private bool IsCurrentChannel(int channelId)
@@ -111,19 +103,21 @@
 
     private async Task LoadChannels()
     {
-        if (!UserStateService.CurrentUserId.HasValue) return;
-
         try
         {
-            var allChannels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
-            channels = allChannels
-                .Where(c => c.Memberships?.Any(m => m.UserId == UserStateService.CurrentUserId) == true)
-                .OrderBy(c => c.Name)
-                .ToList();
-            StateHasChanged();
+            if (UserStateService.CurrentUserId.HasValue)
+            {
+                var allChannels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
+                channels = allChannels
+                    .Where(c => c.Memberships?.Any(m => m.UserId == UserStateService.CurrentUserId.Value) == true)
+                    .OrderBy(c => c.Name)
+                    .ToList();
+                StateHasChanged();
+            }
         }
         catch (Exception ex)
         {
+            error = "Error loading channels";
             Console.WriteLine($"Error loading channels: {ex.Message}");
         }
     }
@@ -133,9 +127,15 @@
         StateHasChanged();
     }
 
+    private async Task RefreshChannels()
+    {
+        await LoadChannels();
+    }
+
     public void Dispose()
     {
         UserStateService.OnUserStateChanged -= async () => await LoadChannels();
         NavigationManager.LocationChanged -= OnLocationChanged;
+        ChannelService.OnChannelMembershipChanged -= async (s, e) => await RefreshChannels();
     }
 }

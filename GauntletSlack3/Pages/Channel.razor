@@ -1,142 +1,81 @@
 @page "/channel/{ChannelId:int}"
 @layout GauntletSlack3.SharedComponents.Layouts.AuthenticatedLayout
-@using GauntletSlack3.SharedComponents
 @using GauntletSlack3.Services.Interfaces
 @using GauntletSlack3.Shared.Models
+@using GauntletSlack3.SharedComponents
 @inject IChannelService ChannelService
 @inject IUserStateService UserStateService
 @inject NavigationManager NavigationManager
 @inject IMessageService MessageService
 
 <div class="channel-container">
-    @if (currentChannel != null)
+    <div class="channel-header">
+        <h2># @channel?.Name</h2>
+        <button class="btn btn-danger" @onclick="LeaveChannel">Leave Channel</button>
+    </div>
+    
+    @if (channel != null)
     {
-        <div class="channel-header">
-            <h2># @currentChannel.Name</h2>
-            <button class="btn @(isMember ? "btn-danger" : "btn-primary")" @onclick="ToggleChannelMembership">
-                @(isMember ? "Leave Channel" : "Join Channel")
-            </button>
-        </div>
+        <ChannelMembersBar Channel="@channel" />
 
-        <ChannelMembersBar Channel="@currentChannel" />
-
-        @if (isMember)
-        {
-            <div class="messages-container">
-                @foreach (var message in currentChannel.Messages)
-                {
-                    <div class="message">
-                        <div class="message-header">
-                            <span class="user-name">@message.User.Name</span>
-                            <span class="timestamp">@message.CreatedAt.ToLocalTime()</span>
-                        </div>
-                        <div class="message-content">
-                            @message.Content
-                        </div>
+        <div class="messages-container">
+            @foreach (var message in channel.Messages.OrderBy(m => m.CreatedAt))
+            {
+                <div class="message">
+                    <div class="message-header">
+                        <span class="user-name">@message.User?.Name</span>
+                        <span class="timestamp">@message.CreatedAt.ToLocalTime()</span>
                     </div>
-                }
-            </div>
-
-            <div class="message-input-container">
-                <div class="input-group">
-                    <input type="text" class="form-control" 
-                           placeholder="Type a message..." 
-                           @bind="newMessage" 
-                           @bind:event="oninput"
-                           @onkeyup="HandleKeyPress" />
-                    <button class="btn btn-primary" @onclick="SendMessage">
-                        Send
-                    </button>
+                    <div class="message-content">
+                        @message.Content
+                    </div>
                 </div>
-            </div>
-        }
-        else
-        {
-            <div class="not-member-message">
-                <p>Join this channel to view messages and participate in discussions.</p>
-            </div>
-        }
-    }
-    else
-    {
-        <div class="loading-container">
-            <div class="spinner"></div>
-            <p>Loading channel...</p>
+            }
         </div>
+
+        <div class="message-input-container">
+            <div class="input-group">
+                <input type="text" class="form-control" 
+                       placeholder="Type a message..." 
+                       @bind="newMessage" 
+                       @bind:event="oninput"
+                       @onkeyup="HandleKeyPress" />
+                <button class="btn btn-primary" @onclick="SendMessage">
+                    Send
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (error != null)
+    {
+        <div class="alert alert-danger">@error</div>
     }
 </div>
 
 @code {
-    [Parameter]
-    public int ChannelId { get; set; }
-
-    private GauntletSlack3.Shared.Models.Channel? currentChannel;
-    private List<GauntletSlack3.Shared.Models.Channel>? channels;
-    private bool isMember;
+    [Parameter] public int ChannelId { get; set; }
+    private GauntletSlack3.Shared.Models.Channel? channel;
+    private string? error;
     private string newMessage = string.Empty;
 
     protected override async Task OnParametersSetAsync()
     {
-        await LoadChannel();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (!UserStateService.CurrentUserId.HasValue)
-        {
-            NavigationManager.NavigateTo("/");
-            return;
-        }
-
-        await LoadChannel();
-    }
-
-    private async Task LoadChannel()
-    {
         try
         {
-            var userId = UserStateService.CurrentUserId!.Value;
-            channels = await ChannelService.GetUserChannelsAsync(userId);
+            var channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId!.Value);
+            channel = channels.FirstOrDefault(c => c.Id == ChannelId);
             
-            currentChannel = channels.FirstOrDefault(c => c.Id == ChannelId);
-            isMember = currentChannel?.Memberships?.Any(m => m.UserId == userId) ?? false;
-            
-            if (currentChannel?.Messages != null)
+            if (channel == null)
             {
-                currentChannel.Messages = currentChannel.Messages
-                    .OrderBy(m => m.CreatedAt)
-                    .ToList();
+                error = "Channel not found";
+                NavigationManager.NavigateTo("/chat");
             }
         }
         catch (Exception ex)
         {
+            error = "Error loading channel";
             Console.WriteLine($"Error loading channel: {ex.Message}");
-            NavigationManager.NavigateTo("/error");
-        }
-    }
-
-    private async Task ToggleChannelMembership()
-    {
-        if (!UserStateService.CurrentUserId.HasValue) return;
-
-        try
-        {
-            var userId = UserStateService.CurrentUserId.Value;
-            if (isMember)
-            {
-                await ChannelService.LeaveChannelAsync(ChannelId, userId);
-            }
-            else
-            {
-                await ChannelService.JoinChannelAsync(ChannelId, userId);
-            }
-
-            await RefreshChannel();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling membership: {ex.Message}");
-            // TODO: Show error to user
         }
     }
 
@@ -154,14 +93,14 @@
 
         try
         {
-            await MessageService.SendMessageAsync(UserStateService.CurrentUserId.Value, ChannelId, newMessage);
+            await MessageService.SendMessageAsync(ChannelId, UserStateService.CurrentUserId.Value, newMessage);
             newMessage = string.Empty;
             await RefreshChannel();
         }
         catch (Exception ex)
         {
+            error = "Error sending message";
             Console.WriteLine($"Error sending message: {ex.Message}");
-            // TODO: Show error to user
         }
     }
 
@@ -169,21 +108,31 @@
     {
         try
         {
-            var userId = UserStateService.CurrentUserId!.Value;
-            channels = await ChannelService.GetUserChannelsAsync(userId);
-            currentChannel = channels.FirstOrDefault(c => c.Id == ChannelId);
-            
-            if (currentChannel?.Messages != null)
-            {
-                currentChannel.Messages = currentChannel.Messages
-                    .OrderBy(m => m.CreatedAt)
-                    .ToList();
-            }
+            var channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId!.Value);
+            channel = channels.FirstOrDefault(c => c.Id == ChannelId);
             StateHasChanged();
         }
         catch (Exception ex)
         {
+            error = "Error refreshing channel";
             Console.WriteLine($"Error refreshing channel: {ex.Message}");
+        }
+    }
+
+    private async Task LeaveChannel()
+    {
+        try
+        {
+            if (UserStateService.CurrentUserId.HasValue)
+            {
+                await ChannelService.LeaveChannelAsync(ChannelId, UserStateService.CurrentUserId.Value);
+                NavigationManager.NavigateTo("/chat");
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Error leaving channel";
+            Console.WriteLine($"Error leaving channel: {ex.Message}");
         }
     }
 } 

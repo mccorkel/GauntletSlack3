@@ -14,6 +14,7 @@ public class SlackDbContext : DbContext
     public DbSet<Message> Messages { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<ChannelMembership> ChannelMemberships { get; set; }
+    public DbSet<MessageReaction> MessageReactions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +67,12 @@ public class SlackDbContext : DbContext
             entity.Property(e => e.UserId).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
 
+            // Parent message relationship
+            entity.HasOne(e => e.ParentMessage)
+                .WithMany(e => e.Replies)
+                .HasForeignKey(e => e.ParentMessageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Message sender relationship
             entity.HasOne(e => e.User)
                 .WithMany(e => e.Messages)
@@ -80,6 +87,28 @@ public class SlackDbContext : DbContext
 
             // Index for channel message lookups
             entity.HasIndex(e => new { e.ChannelId, e.CreatedAt });
+            entity.HasIndex(e => e.ParentMessageId);
+        });
+
+        // Configure MessageReaction
+        modelBuilder.Entity<MessageReaction>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Emoji).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Message)
+                .WithMany(e => e.Reactions)
+                .HasForeignKey(e => e.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.MessageId);
+            entity.HasIndex(e => e.UserId);
         });
 
         // Configure ChannelMembership

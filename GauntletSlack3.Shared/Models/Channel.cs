@@ -11,6 +11,6 @@ public class Channel
     public DateTime CreatedAt { get; set; }
 
     public virtual User? Owner { get; set; }
-    public virtual ICollection<Message>? Messages { get; set; }
-    public virtual ICollection<ChannelMembership>? Memberships { get; set; }
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+    public virtual ICollection<ChannelMembership> Memberships { get; set; } = new List<ChannelMembership>();
 } 

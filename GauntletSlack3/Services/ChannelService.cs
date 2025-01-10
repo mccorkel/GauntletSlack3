@@ -1,6 +1,7 @@
 using GauntletSlack3.Services.Interfaces;
 using GauntletSlack3.Shared.Models;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 
 namespace GauntletSlack3.Services;
 
@@ -8,11 +9,15 @@ public class ChannelService : IChannelService
 {
     private readonly HttpClient _httpClient;
     private readonly IUserStateService _userStateService;
+    private readonly ILogger<ChannelService> _logger;
 
-    public ChannelService(HttpClient httpClient, IUserStateService userStateService)
+    public event EventHandler? OnChannelMembershipChanged;
+
+    public ChannelService(HttpClient httpClient, IUserStateService userStateService, ILogger<ChannelService> logger)
     {
         _httpClient = httpClient;
         _userStateService = userStateService;
+        _logger = logger;
     }
 
     public async Task<List<Channel>> GetUserChannelsAsync(int userId)
@@ -51,10 +56,9 @@ public class ChannelService : IChannelService
 
     public async Task LeaveChannelAsync(int channelId, int userId)
     {
-        var response = await _httpClient.DeleteAsync($"api/Channels/{channelId}/members/{userId}");
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new Exception("Failed to leave channel");
-        }
+        _logger.LogInformation($"Leaving channel {channelId} as user {userId}");
+        var response = await _httpClient.PostAsJsonAsync($"api/channels/{channelId}/leave", userId);
+        response.EnsureSuccessStatusCode();
+        OnChannelMembershipChanged?.Invoke(this, EventArgs.Empty);
     }
 } 

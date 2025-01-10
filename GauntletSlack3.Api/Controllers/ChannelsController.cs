@@ -22,23 +22,25 @@ namespace GauntletSlack3.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<List<Channel>>> GetChannels([FromQuery] int userId)
         {
-            var channels = await _context.Channels
-                .Include(c => c.Memberships)
-                .Include(c => c.Messages)
-                .ThenInclude(m => m.User)
-                .Where(c => c.Memberships.Any(m => m.UserId == userId) || 
-                           c.Type != "private")
-                .ToListAsync();
-
-            Console.WriteLine($"API: Getting all channels, found {channels.Count}");
-            Console.WriteLine($"API: Filtering for user {userId}");
-            foreach (var channel in channels)
+            try
             {
-                var isMember = channel.Memberships.Any(m => m.UserId == userId);
-                Console.WriteLine($"API: Channel {channel.Id}: {channel.Name} - Type: {channel.Type} - IsMember: {isMember}");
-            }
+                _logger.LogInformation("Getting channels for user {UserId}", userId);
 
-            return channels;
+                var query = _context.Channels
+                    .Include(c => c.Memberships)
+                    .Include(c => c.Messages)
+                    .ThenInclude(m => m.User)
+                    .Where(c => c.Memberships.Any(m => m.UserId == userId));
+
+                var channels = await query.ToListAsync();
+                _logger.LogInformation("Found {Count} channels for user {UserId}", channels.Count, userId);
+                return channels;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting channels for user {UserId}", userId);
+                return StatusCode(500, "An error occurred while retrieving channels");
+            }
         }
 
         [HttpGet("user/{userId}")]
@@ -156,6 +158,34 @@ namespace GauntletSlack3.Api.Controllers
             {
                 _logger.LogError($"Error joining channel: {ex.Message}");
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("{channelId}/leave")]
+        public async Task<ActionResult> LeaveChannel(int channelId, [FromBody] int userId)
+        {
+            try
+            {
+                _logger.LogInformation("User {UserId} leaving channel {ChannelId}", userId, channelId);
+
+                var membership = await _context.ChannelMemberships
+                    .FirstOrDefaultAsync(m => m.ChannelId == channelId && m.UserId == userId);
+
+                if (membership == null)
+                {
+                    _logger.LogWarning("Membership not found for user {UserId} in channel {ChannelId}", userId, channelId);
+                    return NotFound("User is not a member of this channel");
+                }
+
+                _context.ChannelMemberships.Remove(membership);
+                await _context.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing user {UserId} from channel {ChannelId}", userId, channelId);
+                return StatusCode(500, "An error occurred while leaving the channel");
             }
         }
     }

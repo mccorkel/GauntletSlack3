@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GauntletSlack3.Api.Migrations
 {
     [DbContext(typeof(SlackDbContext))]
-    [Migration("20250108231825_InitialCreate")]
+    [Migration("20250110003356_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -59,7 +59,7 @@ namespace GauntletSlack3.Api.Migrations
                         new
                         {
                             Id = -1,
-                            CreatedAt = new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568),
+                            CreatedAt = new DateTime(2025, 1, 10, 0, 33, 56, 391, DateTimeKind.Utc).AddTicks(6223),
                             Name = "general",
                             OwnerId = -1,
                             Type = "public"
@@ -92,7 +92,7 @@ namespace GauntletSlack3.Api.Migrations
                             ChannelId = -1,
                             UserId = -1,
                             IsMuted = false,
-                            JoinedAt = new DateTime(2025, 1, 8, 23, 18, 25, 359, DateTimeKind.Utc).AddTicks(2568)
+                            JoinedAt = new DateTime(2025, 1, 10, 0, 33, 56, 391, DateTimeKind.Utc).AddTicks(6223)
                         });
                 });
 
@@ -114,16 +114,51 @@ namespace GauntletSlack3.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("ParentMessageId")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentMessageId");
 
                     b.HasIndex("UserId");
 
                     b.HasIndex("ChannelId", "CreatedAt");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("GauntletSlack3.Shared.Models.MessageReaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MessageReactions");
                 });
 
             modelBuilder.Entity("GauntletSlack3.Shared.Models.User", b =>
@@ -200,6 +235,11 @@ namespace GauntletSlack3.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GauntletSlack3.Shared.Models.Message", "ParentMessage")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("GauntletSlack3.Shared.Models.User", "User")
                         .WithMany("Messages")
                         .HasForeignKey("UserId")
@@ -207,6 +247,27 @@ namespace GauntletSlack3.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Channel");
+
+                    b.Navigation("ParentMessage");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GauntletSlack3.Shared.Models.MessageReaction", b =>
+                {
+                    b.HasOne("GauntletSlack3.Shared.Models.Message", "Message")
+                        .WithMany("Reactions")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GauntletSlack3.Shared.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Message");
 
                     b.Navigation("User");
                 });
@@ -216,6 +277,13 @@ namespace GauntletSlack3.Api.Migrations
                     b.Navigation("Memberships");
 
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("GauntletSlack3.Shared.Models.Message", b =>
+                {
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("GauntletSlack3.Shared.Models.User", b =>

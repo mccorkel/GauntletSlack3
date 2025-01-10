@@ -31,6 +31,16 @@
 
 @code {
     private bool isInitialized = false;
+    private List<GauntletSlack3.Shared.Models.Channel> channels = new();
+
+    private async Task LoadChannels()
+    {
+        if (UserStateService.CurrentUserId.HasValue)
+        {
+            channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,6 +73,20 @@
         if (userChannels.Any())
         {
             NavigationManager.NavigateTo($"/channel/{userChannels.First().Id}");
+        }
+
+        if (UserStateService.CurrentUserId.HasValue)
+        {
+            await LoadChannels();
+            ChannelService.OnChannelMembershipChanged += async (s, e) => await LoadChannels();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (ChannelService != null)
+        {
+            ChannelService.OnChannelMembershipChanged -= async (s, e) => await LoadChannels();
         }
     }
 }
