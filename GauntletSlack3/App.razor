@@ -1,23 +1,26 @@
-﻿<CascadingAuthenticationState>
+﻿@implements IAsyncDisposable
+@using Microsoft.AspNetCore.Components.Authorization
+@using GauntletSlack3.Services.Interfaces
+@inject RealTimeService RealTimeService
+@inject UserStateService UserStateService
+@inject IUserService UserService
+@inject ILogger<App> Logger
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(SharedComponents.Layouts.MainLayout)">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    @if (context.User.Identity?.IsAuthenticated != true)
-                    {
-                        <RedirectToAuthentication />
-                    }
-                    else
-                    {
-                        <p>You are not authorized to access this resource.</p>
-                    }
+                    <GauntletSlack3.SharedComponents.Auth.RedirectToAuthentication />
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
             <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="@typeof(SharedComponents.Layouts.MainLayout)">
+            <LayoutView Layout="@typeof(MainLayout)">
                 <p role="alert">Sorry, there's nothing at this address.</p>
             </LayoutView>
         </NotFound>
@@ -25,10 +28,74 @@
 </CascadingAuthenticationState>
 
 @code {
-    [Inject] NavigationManager Navigation { get; set; }
+    private int? _currentUserId;
+    private DotNetObjectReference<App>? _dotNetRef;
+    private IJSObjectReference? _eventHandler;
 
-    private void RedirectToLogin()
+    protected override async Task OnInitializedAsync()
     {
-        Navigation.NavigateTo("/login");
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated ?? false)
+        {
+            await InitializeUserConnection();
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _eventHandler = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "handleBeforeUnload", _dotNetRef);
+        }
+    }
+
+    private async Task InitializeUserConnection()
+    {
+        try
+        {
+            await RealTimeService.StartAsync();
+            var userId = await UserService.GetCurrentUserId();
+            _currentUserId = userId;
+            await UserStateService.SetUserOnlineStatus(userId, true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing user connection");
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleWindowUnload()
+    {
+        if (_currentUserId.HasValue)
+        {
+            try
+            {
+                await UserStateService.SetUserOnlineStatus(_currentUserId.Value, false);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error setting user offline on window unload");
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_currentUserId.HasValue)
+        {
+            try
+            {
+                await UserStateService.SetUserOnlineStatus(_currentUserId.Value, false);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error setting user offline on dispose");
+            }
+        }
+
+        if (_dotNetRef is not null)
+        {
+            if (_eventHandler is not null)
+            {
+                await JSRuntime.InvokeVoidAsync("window.removeEventListener", "beforeunload", _eventHandler);
+            }
+            _dotNetRef.Dispose();
+        }
     }
 }

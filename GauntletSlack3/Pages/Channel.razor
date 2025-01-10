@@ -4,7 +4,7 @@
 @using GauntletSlack3.Shared.Models
 @using GauntletSlack3.SharedComponents
 @inject IChannelService ChannelService
-@inject IUserStateService UserStateService
+@inject IUserService UserService
 @inject NavigationManager NavigationManager
 @inject IMessageService MessageService
 
@@ -63,7 +63,7 @@
     {
         try
         {
-            var channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId!.Value);
+            var channels = await ChannelService.GetUserChannelsAsync(await UserService.GetCurrentUserId());
             channel = channels.FirstOrDefault(c => c.Id == ChannelId);
             
             if (channel == null)
@@ -89,11 +89,12 @@
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(newMessage) || !UserStateService.CurrentUserId.HasValue) return;
+        if (string.IsNullOrWhiteSpace(newMessage)) return;
+        var userId = await UserService.GetCurrentUserId();
 
         try
         {
-            await MessageService.SendMessageAsync(ChannelId, UserStateService.CurrentUserId.Value, newMessage);
+            await MessageService.SendMessageAsync(ChannelId, userId, newMessage);
             newMessage = string.Empty;
             await RefreshChannel();
         }
@@ -108,7 +109,7 @@
     {
         try
         {
-            var channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId!.Value);
+            var channels = await ChannelService.GetUserChannelsAsync(await UserService.GetCurrentUserId());
             channel = channels.FirstOrDefault(c => c.Id == ChannelId);
             StateHasChanged();
         }
@@ -123,11 +124,9 @@
     {
         try
         {
-            if (UserStateService.CurrentUserId.HasValue)
-            {
-                await ChannelService.LeaveChannelAsync(ChannelId, UserStateService.CurrentUserId.Value);
-                NavigationManager.NavigateTo("/chat");
-            }
+            var userId = await UserService.GetCurrentUserId();
+            await ChannelService.LeaveChannelAsync(ChannelId, userId);
+            NavigationManager.NavigateTo("/chat");
         }
         catch (Exception ex)
         {

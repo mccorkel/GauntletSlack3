@@ -1,51 +1,108 @@
-using Azure.Core;
-using Azure.Messaging.WebPubSub;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
+using GauntletSlack3.Services.Interfaces;
 
 namespace GauntletSlack3.Services;
 
 public class RealTimeService : IAsyncDisposable
 {
-    private readonly WebPubSubServiceClient _client;
+    private HubConnection? _hubConnection;
     private readonly ILogger<RealTimeService> _logger;
     private bool _isConnected;
+    private readonly IUserService _userService;
+    private readonly HttpClient _httpClient;
+    private const int MaxRetries = 3;
+    private int _retryCount = 0;
 
     public event EventHandler<UserStatusChangedEventArgs>? OnUserStatusChanged;
+    public event EventHandler<int>? OnUserJoined;
+    public event Func<Task>? OnReconnected;
+    public event Action<bool>? ConnectionChanged;
 
-    public RealTimeService(IConfiguration config, ILogger<RealTimeService> logger)
+    public RealTimeService(IConfiguration config, ILogger<RealTimeService> logger, IUserService userService, HttpClient httpClient)
     {
         _logger = logger;
-        var connectionString = config.GetConnectionString("WebPubSub");
-        if (string.IsNullOrEmpty(connectionString))
+        _userService = userService;
+        _httpClient = httpClient;
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{_httpClient.BaseAddress}hubs/userstatus")
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<string, bool>("UserStatusChanged", (userIdStr, isOnline) =>
         {
-            _logger.LogError("WebPubSub connection string is missing");
-            return;
-        }
-        _logger.LogInformation("Initializing WebPubSub client with hub: users");
-        _client = new WebPubSubServiceClient(connectionString, "users");
-        _isConnected = true;
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                OnUserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(userId, isOnline));
+            }
+        });
+
+        _hubConnection.On<string>("UserJoined", (userIdStr) =>
+        {
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                OnUserJoined?.Invoke(this, userId);
+            }
+        });
+
+        _hubConnection.Closed += async (error) =>
+        {
+            _isConnected = false;
+            ConnectionChanged?.Invoke(false);
+            _logger.LogWarning(error, "SignalR connection closed");
+            await Task.CompletedTask;
+        };
+
+        _hubConnection.Reconnected += async (connectionId) =>
+        {
+            _isConnected = true;
+            ConnectionChanged?.Invoke(true);
+            _logger.LogInformation("SignalR connection restored");
+            if (OnReconnected != null)
+            {
+                await OnReconnected.Invoke();
+            }
+        };
     }
 
     public async Task StartAsync()
     {
         try
         {
-            _logger.LogInformation("Starting WebPubSub client...");
-            _logger.LogInformation("Subscribing to users group...");
-            var url = await _client.GetClientAccessUriAsync();
-            
-            await _client.SendToGroupAsync("users", 
-                BinaryData.FromString(JsonSerializer.Serialize(new
+            if (_hubConnection == null)
+            {
+                _hubConnection = new HubConnectionBuilder()
+                    .WithUrl($"{_httpClient.BaseAddress}hubs/userstatus")
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                _hubConnection.On<string, bool>("UserStatusChanged", (userIdStr, isOnline) =>
                 {
-                    type = "connection",
-                    message = "Client connected"
-                })),
-                ContentType.ApplicationJson);
+                    if (int.TryParse(userIdStr, out int userId))
+                    {
+                        OnUserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(userId, isOnline));
+                    }
+                });
+            }
+
+            if (_hubConnection.State != HubConnectionState.Connected)
+            {
+                await _hubConnection.StartAsync();
+                _isConnected = true;
+                ConnectionChanged?.Invoke(true);
+                
+                var userId = await _userService.GetCurrentUserId();
+                await _hubConnection.SendAsync("OnConnected", userId.ToString());
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start WebPubSub client");
+            _logger.LogError(ex, "Error connecting to SignalR hub");
+            _isConnected = false;
+            ConnectionChanged?.Invoke(false);
+            throw;
         }
     }
 
@@ -53,32 +110,37 @@ public class RealTimeService : IAsyncDisposable
     {
         if (!_isConnected)
         {
-            _logger.LogWarning("Cannot update user status: WebPubSub client is not connected");
+            _logger.LogWarning("Cannot update status: Not connected");
             return;
         }
-        
+
         try
         {
-            _logger.LogInformation("Sending user status update: UserId={UserId}, IsOnline={IsOnline}", userId, isOnline);
-            await _client.SendToGroupAsync("users", 
-                BinaryData.FromString(JsonSerializer.Serialize(new
-                {
-                    type = "userStatus",
-                    userId = userId,
-                    isOnline = isOnline
-                })),
-                ContentType.ApplicationJson);
-            _logger.LogDebug("User status update sent successfully");
+            await _hubConnection?.SendAsync("UpdateStatus", userId.ToString(), isOnline);
+            _logger.LogInformation("Sent status update for user {UserId}: {IsOnline}", userId, isOnline);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send user status update for UserId={UserId}", userId);
+            _logger.LogError(ex, "Failed to update user status");
+            _isConnected = false;
+            throw;
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        _logger.LogInformation("RealTimeService disposed");
+        if (_hubConnection is not null)
+        {
+            try
+            {
+                await _hubConnection.DisposeAsync();
+                _isConnected = false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error disposing SignalR connection");
+            }
+        }
     }
 }
 

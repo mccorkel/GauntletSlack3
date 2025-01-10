@@ -46,7 +46,7 @@ else
             {
                 try {
                     Console.WriteLine("Initializing user state...");
-                    await UserStateService.InitializeAsync(email, name);
+                    await UserStateService.InitializeAsync();
                     Console.WriteLine($"User state initialized. CurrentUserId: {UserStateService.CurrentUserId}");
                 }
                 catch (Exception ex) {

@@ -1,7 +1,7 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Net.Http.Json;
 using GauntletSlack3.Services.Interfaces;
 using GauntletSlack3.Shared.Models;
-using Microsoft.Extensions.Logging;
 
 namespace GauntletSlack3.Services;
 
@@ -9,11 +9,14 @@ public class UserService : IUserService
 {
     private readonly HttpClient _http;
     private readonly ILogger<UserService> _logger;
+    private readonly AuthenticationStateProvider _authStateProvider;
+    private int? _currentUserId;
 
-    public UserService(HttpClient http, ILogger<UserService> logger)
+    public UserService(HttpClient http, ILogger<UserService> logger, AuthenticationStateProvider authStateProvider)
     {
         _http = http;
         _logger = logger;
+        _authStateProvider = authStateProvider;
     }
 
     public async Task<int> GetOrCreateUserAsync(string email, string name)
@@ -35,7 +38,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<List<User>> GetAllUsersAsync()
+    public async Task<List<User>> GetUsersAsync()
     {
         try
         {
@@ -75,5 +78,21 @@ public class UserService : IUserService
             _logger.LogError(ex, "Error updating status for user {UserId}", userId);
             return false;
         }
+    }
+
+    public async Task<int> GetCurrentUserId()
+    {
+        if (_currentUserId.HasValue)
+            return _currentUserId.Value;
+
+        var authState = await _authStateProvider.GetAuthenticationStateAsync();
+        var email = authState.User.FindFirst("preferred_username")?.Value;
+        var name = authState.User.FindFirst("name")?.Value;
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name))
+            throw new InvalidOperationException("User is not properly authenticated");
+
+        _currentUserId = await GetOrCreateUserAsync(email, name);
+        return _currentUserId.Value;
     }
 } 

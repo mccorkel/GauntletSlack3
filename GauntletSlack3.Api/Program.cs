@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using GauntletSlack3.Api.Data;
-using Microsoft.Azure.WebPubSub.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.VisualStudio.Web.BrowserLink;
+using Microsoft.AspNetCore.SignalR;
+using GauntletSlack3.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,23 +16,24 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Add CORS for Blazor WebAssembly
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
     {
-        builder.AllowAnyOrigin()
+        builder.WithOrigins("https://localhost:7229")
                .AllowAnyMethod()
-               .AllowAnyHeader();
+               .AllowAnyHeader()
+               .AllowCredentials();
     });
 });
 
 // Add DbContext
 builder.Services.AddDbContext<SlackDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Add WebPubSub
-builder.Services.AddWebPubSub();
 
 var app = builder.Build();
 
@@ -41,14 +43,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     app.UseBrowserLink();
+} else {
+    app.UseHttpsRedirection();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
 app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
-
-// Map WebPubSub hub
-app.MapWebPubSubHub<GauntletSlack3.Api.Hubs.UserStatusHub>("/api/hubs/userstatus");
+app.MapHub<UserStatusHub>("/hubs/userstatus");
 
 app.Run(); 

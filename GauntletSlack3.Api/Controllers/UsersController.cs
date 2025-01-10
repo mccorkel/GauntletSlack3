@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GauntletSlack3.Shared.Models;
 using GauntletSlack3.Api.Data;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.SignalR;
 
 namespace GauntletSlack3.Api.Controllers
 {
@@ -15,7 +16,9 @@ namespace GauntletSlack3.Api.Controllers
         private readonly SlackDbContext _context;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(SlackDbContext context, ILogger<UsersController> logger)
+        public UsersController(
+            SlackDbContext context, 
+            ILogger<UsersController> logger)
         {
             _context = context;
             _logger = logger;

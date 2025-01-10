@@ -8,7 +8,7 @@
 
 @inject NavigationManager NavigationManager
 @inject IChannelService ChannelService
-@inject IUserStateService UserStateService
+@inject IUserService UserService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="chat-container">
@@ -35,11 +35,8 @@
 
     private async Task LoadChannels()
     {
-        if (UserStateService.CurrentUserId.HasValue)
-        {
-            channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
-            StateHasChanged();
-        }
+        var userId = await UserService.GetCurrentUserId();
+        channels = await ChannelService.GetUserChannelsAsync(userId);
     }
 
     protected override async Task OnInitializedAsync()
@@ -54,19 +51,13 @@
             return;
         }
 
-        if (!UserStateService.CurrentUserId.HasValue)
-        {
-            Console.WriteLine("User is not initialized");
-            NavigationManager.NavigateTo("/");
-            return;
-        }
-
         isInitialized = true;
         
+        var userId = await UserService.GetCurrentUserId();
         // Get user's channels and redirect to first one if available
-        var channels = await ChannelService.GetUserChannelsAsync(UserStateService.CurrentUserId.Value);
+        var channels = await ChannelService.GetUserChannelsAsync(userId);
         var userChannels = channels
-            .Where(c => c.Memberships?.Any(m => m.UserId == UserStateService.CurrentUserId) == true)
+            .Where(c => c.Memberships?.Any(m => m.UserId == userId) == true)
             .OrderBy(c => c.Name)
             .ToList();
         
@@ -75,11 +66,8 @@
             NavigationManager.NavigateTo($"/channel/{userChannels.First().Id}");
         }
 
-        if (UserStateService.CurrentUserId.HasValue)
-        {
-            await LoadChannels();
-            ChannelService.OnChannelMembershipChanged += async (s, e) => await LoadChannels();
-        }
+        await LoadChannels();
+        ChannelService.OnChannelMembershipChanged += async (s, e) => await LoadChannels();
     }
 
     public void Dispose()

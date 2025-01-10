@@ -1,0 +1,53 @@
+@inject RealTimeService RealTimeService
+@implements IDisposable
+
+<div class="connection-status @(_isConnected ? "connected" : "disconnected")">
+    <span class="status-indicator"></span>
+    <span class="status-text">@(_isConnected ? "Connected" : "Disconnected")</span>
+</div>
+
+@code {
+    private bool _isConnected;
+
+    protected override void OnInitialized()
+    {
+        RealTimeService.OnUserStatusChanged += (s, e) => 
+        {
+            _isConnected = true;
+            InvokeAsync(StateHasChanged);
+        };
+    }
+
+    public void Dispose()
+    {
+        RealTimeService.OnUserStatusChanged -= (s, e) => InvokeAsync(StateHasChanged);
+    }
+}
+
+<style>
+    .connection-status {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--bs-gray-800);
+    }
+
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .connected .status-indicator {
+        background: var(--bs-success);
+    }
+
+    .disconnected .status-indicator {
+        background: var(--bs-danger);
+    }
+</style> 

@@ -8,7 +8,7 @@
 @inject IMessageService MessageService
 @inject NavigationManager Navigation
 @inject IChannelService ChannelService
-@inject IUserStateService UserStateService
+@inject UserStateService UserStateService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 
@@ -71,7 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadChannels();
-        UserStateService.OnUserStateChanged += async () => await LoadChannels();
+        UserStateService.OnUserStatusChanged += async (s, e) => await LoadChannels();
         NavigationManager.LocationChanged += OnLocationChanged;
         ChannelService.OnChannelMembershipChanged += async (s, e) => await RefreshChannels();
     }
@@ -136,7 +136,7 @@
 
     public void Dispose()
     {
-        UserStateService.OnUserStateChanged -= async () => await LoadChannels();
+        UserStateService.OnUserStatusChanged -= async (s, e) => await LoadChannels();
         NavigationManager.LocationChanged -= OnLocationChanged;
         ChannelService.OnChannelMembershipChanged -= async (s, e) => await RefreshChannels();
     }

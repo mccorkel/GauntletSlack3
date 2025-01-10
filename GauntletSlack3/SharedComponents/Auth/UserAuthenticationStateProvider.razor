@@ -1,10 +1,12 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using GauntletSlack3.Services
 @using GauntletSlack3.Services.Interfaces
 @inject IUserService UserService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
-@inject IUserStateService UserStateService
+@inject UserStateService UserStateService
+@inject RealTimeService RealTimeService
 
 @code {
     protected override async Task OnInitializedAsync()
@@ -23,15 +25,11 @@
             {
                 try
                 {
-                    var userId = await UserService.GetOrCreateUserAsync(email, name);
-                    Console.WriteLine($"Created/Retrieved user with ID: {userId}");
-                    UserStateService.CurrentUserId = userId;
-                    UserStateService.CurrentUserName = name;
-                    NavigationManager.NavigateTo("/chat");
+                    InitializeUserAsync(email, name);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error creating user: {ex.Message}");
+                    Console.WriteLine($"Error initializing user: {ex.Message}");
                     NavigationManager.NavigateTo("/error");
                 }
             }
@@ -39,6 +37,23 @@
         else
         {
             Console.WriteLine("User not authenticated");
+        }
+    }
+
+    private async Task InitializeUserAsync(string email, string name)
+    {
+        try
+        {
+            var userId = await UserService.GetOrCreateUserAsync(email, name);
+            Console.WriteLine($"Created/Retrieved user with ID: {userId}");
+            await UserStateService.InitializeAsync();
+            await RealTimeService.StartAsync();
+            NavigationManager.NavigateTo("/chat");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing user: {ex.Message}");
+            NavigationManager.NavigateTo("/error");
         }
     }
 } 

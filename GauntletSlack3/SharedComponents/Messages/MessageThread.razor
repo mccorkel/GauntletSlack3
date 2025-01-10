@@ -1,7 +1,7 @@
 @using GauntletSlack3.Services.Interfaces
 @using GauntletSlack3.Shared.Models
 @inject IMessageService MessageService
-@inject IUserStateService UserStateService
+@inject IUserService UserService
 @inject ILogger<MessageThread> Logger
 
 @if (IsOpen && ParentMessage != null)
@@ -189,22 +189,16 @@
 
     private async Task SendReply()
     {
-        if (string.IsNullOrWhiteSpace(replyText) || ParentMessage == null || !UserStateService.CurrentUserId.HasValue)
-            return;
-
+        if (string.IsNullOrWhiteSpace(replyText)) return;
         try
         {
-            isSending = true;
-            error = null;
-            var reply = await MessageService.SendReplyAsync(
+            var userId = await UserService.GetCurrentUserId();
+            await MessageService.SendReplyAsync(
                 ParentMessage.Id,
-                UserStateService.CurrentUserId.Value,
+                userId,
                 replyText
             );
             replyText = string.Empty;
-            replies?.Add(reply);
-            await OnMessageUpdated.InvokeAsync(ParentMessage);
-            shouldScrollToBottom = true;
         }
         catch (Exception ex)
         {

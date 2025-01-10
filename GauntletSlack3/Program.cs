@@ -15,8 +15,9 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChannelService, ChannelService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<IUserStateService, UserStateService>();
-builder.Services.AddSingleton<RealTimeService>();
+builder.Services.AddScoped<RealTimeService>();
+builder.Services.AddScoped<UserStateService>();
+builder.Services.AddScoped<IUserStateService>(sp => sp.GetRequiredService<UserStateService>());
 
 // Auth configuration
 builder.Services.AddAuthorizationCore();

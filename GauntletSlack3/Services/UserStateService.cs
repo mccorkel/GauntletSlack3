@@ -1,41 +1,132 @@
 using GauntletSlack3.Services.Interfaces;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace GauntletSlack3.Services
 {
-    public class UserStateService : IUserStateService
+    public class UserStateService : IUserStateService, IAsyncDisposable
     {
+        private readonly ILogger<UserStateService> _logger;
+        private readonly RealTimeService _realTimeService;
         private readonly IUserService _userService;
+        private Dictionary<int, bool> _userStatuses = new();
         private int? _currentUserId;
+        public int? CurrentUserId => _currentUserId;
+        public event EventHandler? OnUserStatusChanged;
+        private bool _isInitialized;
 
-        public event Action OnUserStateChanged;
+        public UserStateService(
+            ILogger<UserStateService> logger, 
+            RealTimeService realTimeService,
+            IUserService userService)
+        {
+            _logger = logger;
+            _realTimeService = realTimeService;
+            _userService = userService;
+            _realTimeService.OnUserStatusChanged += HandleUserStatusChanged;
+            _realTimeService.OnUserJoined += HandleUserJoined;
+            _realTimeService.OnReconnected += HandleReconnected;
+        }
 
-        public int? CurrentUserId 
-        { 
-            get => _currentUserId;
-            set
+        public async Task InitializeAsync()
+        {
+            if (_isInitialized) return;
+            await InitializeUserStatuses();
+            _isInitialized = true;
+        }
+
+        private void HandleUserStatusChanged(object? sender, UserStatusChangedEventArgs e)
+        {
+            _userStatuses[e.UserId] = e.IsOnline;
+            OnUserStatusChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public bool IsUserOnline(int userId)
+        {
+            return _userStatuses.TryGetValue(userId, out bool status) && status;
+        }
+
+        public async Task SetUserOnlineStatus(int userId, bool isOnline)
+        {
+            try
             {
-                _currentUserId = value;
-                OnUserStateChanged?.Invoke();
+                _userStatuses[userId] = isOnline;
+                await _realTimeService.UpdateUserStatusAsync(userId, isOnline);
+                OnUserStatusChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting user online status");
+                throw;
             }
         }
 
-        public UserStateService(IUserService userService)
+        private async Task HandleReconnected()
         {
-            _userService = userService;
+            try
+            {
+                // Refresh all user statuses after reconnection
+                var users = await _userService.GetUsersAsync();
+                foreach (var user in users)
+                {
+                    _userStatuses[user.Id] = user.IsOnline;
+                }
+                OnUserStatusChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing user statuses after reconnection");
+            }
         }
 
-        public string? CurrentUserName { get; set; }
-
-        public async Task InitializeAsync(string email, string name)
+        private async Task InitializeUserStatuses()
         {
-            CurrentUserId = await _userService.GetOrCreateUserAsync(email, name);
-            CurrentUserName = name;
+            try
+            {
+                _currentUserId = await _userService.GetCurrentUserId();
+                var users = await _userService.GetUsersAsync();
+                foreach (var user in users)
+                {
+                    _userStatuses[user.Id] = user.IsOnline;
+                }
+                OnUserStatusChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing user statuses");
+            }
         }
 
-        public void Clear()
+        private async void HandleUserJoined(object? sender, int userId)
         {
-            CurrentUserId = null;
-            CurrentUserName = null;
+            try
+            {
+                // Get the new user's status and add them to our tracking
+                var users = await _userService.GetUsersAsync();
+                var newUser = users.FirstOrDefault(u => u.Id == userId);
+                if (newUser != null)
+                {
+                    _userStatuses[userId] = newUser.IsOnline;
+                    OnUserStatusChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling new user joined");
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _realTimeService.OnUserStatusChanged -= HandleUserStatusChanged;
+            _realTimeService.OnUserJoined -= HandleUserJoined;
+            _realTimeService.OnReconnected -= HandleReconnected;
+            
+            // Clear statuses
+            _userStatuses.Clear();
         }
     }
 } 

@@ -1,0 +1,63 @@
+@using GauntletSlack3.Services.Interfaces
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject RealTimeService RealTimeService
+@inject UserStateService UserStateService
+@inject IUserService UserService
+@inject ILogger<ChatLayout> Logger
+
+<div class="chat-layout">
+    <NavMenu />
+    <main>
+        @Body
+    </main>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userId = await UserService.GetCurrentUserId();
+            if (userId > 0)
+            {
+                await UserStateService.SetUserOnlineStatus(userId, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing chat layout");
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        try
+        {
+            var userId = await UserService.GetCurrentUserId();
+            if (userId > 0)
+            {
+                await UserStateService.SetUserOnlineStatus(userId, false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error disposing chat layout");
+        }
+    }
+}
+
+<style>
+    .chat-layout {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    main {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+</style> 
