@@ -1,33 +1,78 @@
+using System.Net.Http.Json;
 using GauntletSlack3.Services.Interfaces;
 using GauntletSlack3.Shared.Models;
-using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 
-namespace GauntletSlack3.Services
+namespace GauntletSlack3.Services;
+
+public class UserService : IUserService
 {
-    public class UserService : IUserService
+    private readonly HttpClient _http;
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(HttpClient http, ILogger<UserService> logger)
     {
-        private readonly HttpClient _httpClient;
+        _http = http;
+        _logger = logger;
+    }
 
-        public UserService(HttpClient httpClient)
+    public async Task<int> GetOrCreateUserAsync(string email, string name)
+    {
+        try
         {
-            _httpClient = httpClient;
-        }
-
-        public async Task<int> GetOrCreateUserAsync(string email, string name)
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/Users/getorcreate", new { Email = email, Name = name });
+            var response = await _http.PostAsJsonAsync("api/Users/getorcreate", new { Email = email, Name = name });
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<int>();
             }
-            Console.WriteLine($"Failed to create user. Status: {response.StatusCode}");
-            Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+            _logger.LogError("Failed to create user. Status: {StatusCode}", response.StatusCode);
             throw new Exception("Failed to get or create user");
         }
-
-        public async Task<List<User>> GetUsersAsync()
+        catch (Exception ex)
         {
-            return await _httpClient.GetFromJsonAsync<List<User>>("api/users") ?? new List<User>();
+            _logger.LogError(ex, "Error in GetOrCreateUserAsync for {Email}", email);
+            throw;
+        }
+    }
+
+    public async Task<List<User>> GetAllUsersAsync()
+    {
+        try
+        {
+            var users = await _http.GetFromJsonAsync<List<User>>("api/users");
+            return users ?? new List<User>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching users");
+            throw;
+        }
+    }
+
+    public async Task<User?> GetUserAsync(int userId)
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<User>($"api/users/{userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching user {UserId}", userId);
+            return null;
+        }
+    }
+
+    public async Task<bool> UpdateUserStatusAsync(int userId, bool isOnline)
+    {
+        try
+        {
+            var response = await _http.PutAsJsonAsync($"api/users/{userId}/status", new { IsOnline = isOnline });
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating status for user {UserId}", userId);
+            return false;
         }
     }
 } 

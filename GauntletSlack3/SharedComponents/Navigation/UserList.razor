@@ -1,0 +1,121 @@
+@using GauntletSlack3.Services.Interfaces
+@using GauntletSlack3.Shared.Models
+@using System.Timers
+@inject IUserStateService UserStateService
+@inject IUserService UserService
+
+<div class="users-list">
+    <div class="users-header">
+        <h3>Users (@(users?.Count ?? 0))</h3>
+    </div>
+    @if (users != null)
+    {
+        @foreach (var user in users.OrderBy(u => u.Name))
+        {
+            <div class="user-item @(user.Id == UserStateService.CurrentUserId ? "current-user" : "")">
+                <span class="user-status @(user.IsOnline ? "online" : "offline")"></span>
+                <span class="user-name">@user.Name</span>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-muted">
+            <span class="oi oi-loop-circular spinning"></span> Loading users...
+        </div>
+    }
+</div>
+
+<style>
+    .users-list {
+        padding: 1rem;
+        border-top: 1px solid var(--bs-gray-700);
+    }
+
+    .users-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-item {
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .user-item:hover {
+        background-color: var(--bs-gray-700);
+    }
+
+    .user-item.current-user {
+        font-weight: bold;
+        background-color: var(--bs-gray-800);
+    }
+
+    .user-status {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+
+    .online {
+        background-color: #28a745;
+    }
+
+    .offline {
+        background-color: #dc3545;
+    }
+
+    .current-user {
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    private List<User>? users;
+    private Timer? refreshTimer;
+    private const int RefreshInterval = 30000; // 30 seconds
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+        StartRefreshTimer();
+        UserStateService.OnUserStateChanged += async () => await LoadUsers();
+    }
+
+    private void StartRefreshTimer()
+    {
+        refreshTimer = new Timer(RefreshInterval);
+        refreshTimer.Elapsed += async (sender, e) =>
+        {
+            await LoadUsers();
+            await InvokeAsync(StateHasChanged);
+        };
+        refreshTimer.AutoReset = true;
+        refreshTimer.Enabled = true;
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            users = await UserService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading users: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+        UserStateService.OnUserStateChanged -= async () => await LoadUsers();
+    }
+} 

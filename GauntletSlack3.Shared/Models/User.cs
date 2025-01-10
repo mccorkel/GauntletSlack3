@@ -6,6 +6,7 @@ public class User
     public required string Name { get; set; }
     public string Email { get; set; } = string.Empty;
     public bool IsAdmin { get; set; }
+    public bool IsOnline { get; set; }
 
     // Navigation properties
     public virtual ICollection<Channel>? OwnedChannels { get; set; }
