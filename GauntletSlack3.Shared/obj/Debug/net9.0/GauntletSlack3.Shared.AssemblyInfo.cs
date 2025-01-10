@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GauntletSlack3.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7e094eb71272068818de56bfa8b3f45d986aecff")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+32b28c597f249798bbaa64633af425f1ff727ebd")]
 [assembly: System.Reflection.AssemblyProductAttribute("GauntletSlack3.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GauntletSlack3.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

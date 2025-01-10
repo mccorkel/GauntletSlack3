@@ -1,26 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using GauntletSlack3.Api.Data;
-using GauntletSlack3.Shared.Models;
-using Microsoft.OpenApi.Models;
-using System.Text.Json.Serialization;
+using Microsoft.Azure.WebPubSub.AspNetCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.VisualStudio.Web.BrowserLink;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen();
+
+// Add CORS
+builder.Services.AddCors(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "GauntletSlack API", 
-        Version = "v1",
-        Description = "A Slack-like API for team communication"
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
     });
 });
 
@@ -28,32 +30,25 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<SlackDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add CORS
-builder.Services.AddCors();
+// Add WebPubSub
+builder.Services.AddWebPubSub();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "GauntletSlack API V1");
-    });
-}
-else 
-{
-    app.UseHttpsRedirection(); // Only redirect in production
+    app.UseSwaggerUI();
+    app.UseBrowserLink();
 }
 
-app.UseCors(x => x
-    .AllowAnyMethod()
-    .AllowAnyHeader()
-    .SetIsOriginAllowed(origin => true)
-    .AllowCredentials());
-
+app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+// Map WebPubSub hub
+app.MapWebPubSubHub<GauntletSlack3.Api.Hubs.UserStatusHub>("/api/hubs/userstatus");
+
+app.Run(); 

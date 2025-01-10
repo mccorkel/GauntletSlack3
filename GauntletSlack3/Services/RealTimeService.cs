@@ -33,7 +33,7 @@ public class RealTimeService : IAsyncDisposable
         {
             _logger.LogInformation("Starting WebPubSub client...");
             _logger.LogInformation("Subscribing to users group...");
-            await _client.AddUserToGroupAsync("users", "all");
+            var url = await _client.GetClientAccessUriAsync();
             
             await _client.SendToGroupAsync("users", 
                 BinaryData.FromString(JsonSerializer.Serialize(new
@@ -45,7 +45,7 @@ public class RealTimeService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start WebPubSub client. Connection string might be invalid or service unavailable");
+            _logger.LogError(ex, "Failed to start WebPubSub client");
         }
     }
 

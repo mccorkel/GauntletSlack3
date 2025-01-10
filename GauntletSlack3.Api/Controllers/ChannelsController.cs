@@ -25,15 +25,12 @@ namespace GauntletSlack3.Api.Controllers
             try
             {
                 _logger.LogInformation("Getting channels for user {UserId}", userId);
-
-                var query = _context.Channels
+                var channels = await _context.Channels
                     .Include(c => c.Memberships)
                     .Include(c => c.Messages)
                     .ThenInclude(m => m.User)
-                    .Where(c => c.Memberships.Any(m => m.UserId == userId));
-
-                var channels = await query.ToListAsync();
-                _logger.LogInformation("Found {Count} channels for user {UserId}", channels.Count, userId);
+                    .Where(c => c.Memberships.Any(m => m.UserId == userId))
+                    .ToListAsync();
                 return channels;
             }
             catch (Exception ex)

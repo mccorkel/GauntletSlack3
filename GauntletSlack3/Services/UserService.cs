@@ -66,6 +66,7 @@ public class UserService : IUserService
     {
         try
         {
+            _logger.LogInformation("Updating status for user {UserId} to {Status}", userId, isOnline ? "online" : "offline");
             var response = await _http.PutAsJsonAsync($"api/users/{userId}/status", new { IsOnline = isOnline });
             return response.IsSuccessStatusCode;
         }
