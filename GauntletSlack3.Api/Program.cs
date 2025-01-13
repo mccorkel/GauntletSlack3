@@ -1,16 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using GauntletSlack3.Api.Data;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.VisualStudio.Web.BrowserLink;
 using Microsoft.AspNetCore.SignalR;
 using GauntletSlack3.Api.Hubs;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
 using Microsoft.ApplicationInsights.Extensibility;
 using Serilog;
 using GauntletSlack3.Api.Services;
 using GauntletSlack3.Api.Services.Interfaces;
-using System.Threading.RateLimiting;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Serilog.AspNetCore;
 using Serilog.Sinks.ApplicationInsights;
@@ -78,18 +75,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<SlackDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddRateLimiter(options =>
-{
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.User.Identity?.Name ?? context.Request.Headers.Host.ToString(),
-            factory: partition => new FixedWindowRateLimiterOptions
-            {
-                AutoReplenishment = true,
-                PermitLimit = 100,
-                Window = TimeSpan.FromMinutes(1)
-            }));
-});
 
 builder.Services.AddApplicationInsightsTelemetry();
 
@@ -108,10 +93,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseBrowserLink();
 }
 
 // Move CORS before HTTPS redirection
@@ -128,7 +111,6 @@ app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<UserStatusHub>("/hubs/userstatus");
-app.UseRateLimiter();
 
 // Add WebSocket options
 app.UseWebSockets(new WebSocketOptions
