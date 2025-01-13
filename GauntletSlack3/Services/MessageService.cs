@@ -1,25 +1,41 @@
 using GauntletSlack3.Services.Interfaces;
 using GauntletSlack3.Shared.Models;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Caching.Memory;
+using Blazored.LocalStorage;
+using Microsoft.Extensions.Logging;
 
 namespace GauntletSlack3.Services
 {
     public class MessageService : IMessageService
     {
-        private readonly HttpClient _http;
+        private readonly ILocalStorageService _localStorage;
+        private readonly HttpClient _httpClient;
         private readonly ILogger<MessageService> _logger;
 
-        public MessageService(HttpClient http, ILogger<MessageService> logger)
+        public MessageService(
+            ILocalStorageService localStorage, 
+            HttpClient httpClient,
+            ILogger<MessageService> logger)
         {
-            _http = http;
+            _localStorage = localStorage;
+            _httpClient = httpClient;
             _logger = logger;
         }
 
         public async Task<List<Message>> GetChannelMessagesAsync(int channelId)
         {
+            string cacheKey = $"channel_messages_{channelId}";
+            var cachedMessages = await _localStorage.GetItemAsync<List<Message>>(cacheKey);
+            if (cachedMessages != null)
+            {
+                return cachedMessages;
+            }
+
             try
             {
-                var messages = await _http.GetFromJsonAsync<List<Message>>($"api/messages/channel/{channelId}");
+                var messages = await _httpClient.GetFromJsonAsync<List<Message>>($"api/messages/channel/{channelId}");
+                await _localStorage.SetItemAsync(cacheKey, messages);
                 return messages ?? new List<Message>();
             }
             catch (Exception ex)
@@ -36,7 +52,7 @@ namespace GauntletSlack3.Services
                 _logger.LogInformation("Sending message to channel {ChannelId} from user {UserId} with content: {Content}", 
                     channelId, userId, content);
 
-                var response = await _http.PostAsJsonAsync($"api/messages/channel/{channelId}", new
+                var response = await _httpClient.PostAsJsonAsync($"api/messages/channel/{channelId}", new
                 {
                     UserId = userId,
                     Content = content
@@ -65,7 +81,7 @@ namespace GauntletSlack3.Services
             try
             {
                 _logger.LogInformation("Fetching message {MessageId}", messageId);
-                return await _http.GetFromJsonAsync<Message>($"api/messages/{messageId}");
+                return await _httpClient.GetFromJsonAsync<Message>($"api/messages/{messageId}");
             }
             catch (Exception ex)
             {
@@ -79,7 +95,7 @@ namespace GauntletSlack3.Services
             try
             {
                 _logger.LogInformation("Sending reply to message {MessageId}", parentMessageId);
-                var response = await _http.PostAsJsonAsync($"api/messages/{parentMessageId}/reply", new
+                var response = await _httpClient.PostAsJsonAsync($"api/messages/{parentMessageId}/reply", new
                 {
                     UserId = userId,
                     Content = content
@@ -101,7 +117,7 @@ namespace GauntletSlack3.Services
             try
             {
                 _logger.LogInformation("Adding reaction to message {MessageId}", messageId);
-                var response = await _http.PostAsJsonAsync($"api/messages/{messageId}/reactions", new
+                var response = await _httpClient.PostAsJsonAsync($"api/messages/{messageId}/reactions", new
                 {
                     UserId = userId,
                     Emoji = emoji
@@ -120,7 +136,7 @@ namespace GauntletSlack3.Services
             try
             {
                 _logger.LogInformation("Removing reaction from message {MessageId}", messageId);
-                var response = await _http.DeleteAsync(
+                var response = await _httpClient.DeleteAsync(
                     $"api/messages/{messageId}/reactions?userId={userId}&emoji={Uri.EscapeDataString(emoji)}");
                 response.EnsureSuccessStatusCode();
             }

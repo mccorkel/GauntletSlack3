@@ -1,0 +1,18 @@
+@using GauntletSlack3.Shared.Models
+
+<div class="channel-members-bar">
+    @if (Channel?.Memberships != null)
+    {
+        foreach (var membership in Channel.Memberships)
+        {
+            <div class="member">
+                @membership.User?.Name
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Channel? Channel { get; set; }
+} 

@@ -132,6 +132,15 @@ namespace GauntletSlack3.Api.Controllers
                     return NotFound();
                 }
 
+                if (channel.Memberships == null)
+                {
+                    return NotFound();
+                }
+                if (!channel.Memberships.Any(m => m.UserId == userId))
+                {
+                    return Forbid();
+                }
+
                 // Check if user is already a member
                 if (channel.Memberships?.Any(m => m.UserId == userId) == true)
                 {

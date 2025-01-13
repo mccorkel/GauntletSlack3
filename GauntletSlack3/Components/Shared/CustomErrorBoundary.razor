@@ -1,0 +1,25 @@
+@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@inherits Microsoft.AspNetCore.Components.Web.ErrorBoundary
+@inject IWebAssemblyHostEnvironment Environment
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@if (CurrentException is not null)
+{
+    <div class="error-ui">
+        @if (Environment.IsDevelopment())
+        {
+            <div class="error-details">
+                <pre>@CurrentException.ToString()</pre>
+            </div>
+        }
+        else
+        {
+            <div class="error-message">
+                An error has occurred. Please try again later.
+            </div>
+        }
+    </div>
+} 

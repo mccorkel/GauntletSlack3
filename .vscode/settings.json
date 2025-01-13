@@ -1,0 +1,6 @@
+{
+    "omnisharp.enableRoslynAnalyzers": true,
+    "omnisharp.enableEditorConfigSupport": true,
+    "dotnet.server.useOmnisharp": true,
+    "csharp.format.enable": true
+} 
