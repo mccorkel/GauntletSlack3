@@ -13,7 +13,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Configure HttpClient with base address
+// Configure HttpClient with base address and CORS
 builder.Services.AddScoped(sp => 
 {
     var httpClient = new HttpClient
@@ -23,6 +23,11 @@ builder.Services.AddScoped(sp =>
     
     // Add default headers for all requests
     httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+    
+    // Add CORS headers
+    httpClient.DefaultRequestHeaders.Add("Access-Control-Allow-Origin", "*");
+    httpClient.DefaultRequestHeaders.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    httpClient.DefaultRequestHeaders.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
     
     return httpClient;
 });

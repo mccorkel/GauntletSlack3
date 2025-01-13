@@ -75,5 +75,27 @@
       "route": "/*",
       "rewrite": "/index.html"
     }
-  ]
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/_framework/*",
+      "/_content/*",
+      "/css/*",
+      "/js/*",
+      "/lib/*",
+      "*.ico",
+      "*.png",
+      "*.jpg",
+      "*.css",
+      "*.js"
+    ]
+  },
+  "globalHeaders": {
+    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https://*.azurestaticapps.net https://*.azure.com https://*.applicationinsights.azure.com wss://*.azurestaticapps.net api://*;",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "X-Content-Type-Options": "nosniff"
+  }
 } 
