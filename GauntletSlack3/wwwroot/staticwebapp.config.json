@@ -1,6 +1,6 @@
 {
   "platform": {
-    "apiRuntime": "dotnet:6.0"
+    "apiRuntime": "dotnet:8.0"
   },
   "navigationFallback": {
     "rewrite": "/index.html",
