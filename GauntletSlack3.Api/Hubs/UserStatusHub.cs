@@ -1,13 +1,18 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using GauntletSlack3.Api.Data;
+using GauntletSlack3.Shared.Models;
 
 namespace GauntletSlack3.Api.Hubs
 {
     public class UserStatusHub : Hub
     {
         private readonly ILogger<UserStatusHub> _logger;
+        private readonly SlackDbContext _context;
 
-        public UserStatusHub(ILogger<UserStatusHub> logger)
+        public UserStatusHub(SlackDbContext context, ILogger<UserStatusHub> logger)
         {
+            _context = context;
             _logger = logger;
         }
 

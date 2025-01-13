@@ -13,4 +13,5 @@
 /GauntletSlack3.Shared/bin
 /swa-cli.config.json
 /local.settings.json
+/GauntletSlack3.Api/local.settings.json
 killRunningDebugs.sh

@@ -19,12 +19,13 @@
                 "--project",
                 "${workspaceFolder}/GauntletSlack3.Api/GauntletSlack3.Api.csproj",
                 "--urls",
-                "https://localhost:7237;http://localhost:5256"
+                "https://localhost:7237;http://localhost:5256;http://localhost:5257"
             ],
             "cwd": "${workspaceFolder}/GauntletSlack3.Api",
             "stopAtEntry": false,
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_GRPC_PORT": "5257"
             }
         }
     ],

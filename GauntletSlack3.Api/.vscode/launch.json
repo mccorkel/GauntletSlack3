@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to .NET Functions",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:azureFunctions.pickProcess}",
+            "presentation": {
+                "hidden": false,
+                "group": "Azure Functions",
+                "order": 1
+            }
+        },
+        {
+            "name": "Launch Functions",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/net6.0/GauntletSlack3.Api.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "AZURE_FUNCTIONS_ENVIRONMENT": "Development",
+                "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+            }
+        }
+    ]
+} 

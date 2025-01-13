@@ -110,7 +110,7 @@ namespace GauntletSlack3.Api.Controllers
         public async Task<ActionResult<List<User>>> GetChannelMembers(int channelId)
         {
             return await _context.Users
-                .Where(u => u.Memberships.Any(m => m.ChannelId == channelId))
+                .Where(u => u.ChannelMemberships.Any(m => m.ChannelId == channelId))
                 .ToListAsync();
         }
 

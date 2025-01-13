@@ -3,13 +3,12 @@ namespace GauntletSlack3.Shared.Models;
 public class User
 {
     public int Id { get; set; }
-    public string Name { get; set; }
     public string Email { get; set; } = string.Empty;
-    public bool IsAdmin { get; set; }
+    public string Name { get; set; } = string.Empty;
     public bool IsOnline { get; set; }
-
-    // Navigation properties
-    public virtual ICollection<Channel>? OwnedChannels { get; set; }
-    public virtual ICollection<Message>? Messages { get; set; }
-    public virtual ICollection<ChannelMembership>? Memberships { get; set; }
+    public DateTime LastSeen { get; set; }
+    public bool IsAdmin { get; set; }
+    public virtual ICollection<ChannelMembership> ChannelMemberships { get; set; } = new List<ChannelMembership>();
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+    public virtual ICollection<MessageReaction> MessageReactions { get; set; } = new List<MessageReaction>();
 } 

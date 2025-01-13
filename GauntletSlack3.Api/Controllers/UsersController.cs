@@ -30,7 +30,7 @@ namespace GauntletSlack3.Api.Controllers
             try
             {
                 return await _context.Users
-                    .Include(u => u.Memberships)
+                    .Include(u => u.ChannelMemberships)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -44,7 +44,7 @@ namespace GauntletSlack3.Api.Controllers
         public async Task<ActionResult<User>> GetUser(int id)
         {
             var user = await _context.Users
-                .Include(u => u.Memberships)
+                .Include(u => u.ChannelMemberships)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null)

@@ -4,14 +4,13 @@
         "applicationInsights": {
             "samplingSettings": {
                 "isEnabled": true,
-                "excludedTypes": "Request",
-                "maxTelemetryItemsPerSecond": 20
+                "excludedTypes": "Request"
             }
         },
         "logLevel": {
             "default": "Information",
             "Host.Results": "Error",
-            "Function": "Information",
+            "Function": "Error",
             "Host.Aggregator": "Information"
         }
     },
@@ -23,6 +22,5 @@
             "dynamicThrottlesEnabled": true
         }
     },
-    "functionTimeout": "00:10:00",
-    "environment": "Production"
+    "functionTimeout": "00:05:00"
 }
