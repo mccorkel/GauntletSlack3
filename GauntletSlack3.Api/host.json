@@ -9,10 +9,5 @@
         "logLevel": {
             "default": "Information"
         }
-    },
-    "extensions": {
-        "http": {
-            "routePrefix": ""
-        }
     }
 }
