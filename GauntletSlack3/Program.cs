@@ -21,7 +21,6 @@ builder.Services.AddScoped(sp => new HttpClient
 
 // Register services
 builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<IRealTimeService, RealTimeService>();
 
 // Services
 builder.Services.AddScoped<IUserService, UserService>();
