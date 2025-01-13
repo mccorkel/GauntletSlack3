@@ -9,4 +9,6 @@
 /GauntletSlack3.Api/obj
 /GauntletSlack3.Api/bin
 /GauntletSlack3.Api/appsettings.Development.json
+/GauntletSlack3.Shared/obj
+/GauntletSlack3.Shared/bin
 killRunningDebugs.sh
