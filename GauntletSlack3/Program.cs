@@ -13,12 +13,15 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Configure HttpClient with environment-specific base address
-builder.Services.AddScoped(sp => 
+// Configure HttpClient with base address
+builder.Services.AddScoped(sp => new HttpClient
 {
-    var baseAddress = builder.Configuration["ApiBaseUrl"];
-    return new HttpClient { BaseAddress = new Uri(baseAddress) };
+    BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress)
 });
+
+// Register services
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IRealTimeService, RealTimeService>();
 
 // Services
 builder.Services.AddScoped<IUserService, UserService>();

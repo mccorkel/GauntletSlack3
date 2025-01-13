@@ -8,6 +8,4 @@
 /GauntletSlack3.Api/obj
 /GauntletSlack3.Api/bin/Debug/net9.0
 /GauntletSlack3.Api/appsettings.json
-/GauntletSlack3/appsettings.json
-/GauntletSlack3/wwwroot/appsettings.json
 killRunningDebugs.sh
