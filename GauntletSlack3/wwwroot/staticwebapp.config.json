@@ -1,12 +1,9 @@
 {
   "platform": {
-    "apiRuntime": "dotnet:8.0"
+    "apiRuntime": "dotnet-isolated:8.0"
   },
   "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": [
-      "/*.{ico,png,jpg,gif,svg}"
-    ]
+    "rewrite": "/index.html"
   },
   "mimeTypes": {
     ".dll": "application/octet-stream",
@@ -55,8 +52,7 @@
     },
     {
       "route": "/*",
-      "serve": "/index.html",
-      "statusCode": 200
+      "rewrite": "/index.html"
     }
   ],
   "globalHeaders": {
