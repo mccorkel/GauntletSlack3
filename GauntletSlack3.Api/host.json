@@ -3,11 +3,26 @@
     "logging": {
         "applicationInsights": {
             "samplingSettings": {
-                "isEnabled": true
+                "isEnabled": true,
+                "excludedTypes": "Request",
+                "maxTelemetryItemsPerSecond": 20
             }
         },
         "logLevel": {
-            "default": "Information"
+            "default": "Information",
+            "Host.Results": "Error",
+            "Function": "Information",
+            "Host.Aggregator": "Information"
         }
-    }
+    },
+    "extensions": {
+        "http": {
+            "routePrefix": "api",
+            "maxOutstandingRequests": 200,
+            "maxConcurrentRequests": 100,
+            "dynamicThrottlesEnabled": true
+        }
+    },
+    "functionTimeout": "00:10:00",
+    "environment": "Production"
 }
