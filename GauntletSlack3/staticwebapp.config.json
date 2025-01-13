@@ -1,39 +1,62 @@
 {
+  "platform": {
+    "apiRuntime": "dotnet-isolated:6.0"
+  },
   "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": [
-      "/_framework/*",
-      "/_content/*",
-      "/css/*",
-      "/js/*",
-      "/lib/*",
-      "*.ico",
-      "*.png",
-      "*.jpg",
-      "*.css",
-      "*.js"
-    ]
+    "rewrite": "/index.html"
   },
   "mimeTypes": {
-    ".css": "text/css",
+    ".dll": "application/octet-stream",
+    ".wasm": "application/wasm",
     ".js": "application/javascript",
+    ".css": "text/css",
+    ".json": "application/json",
     ".woff": "application/font-woff",
     ".woff2": "application/font-woff2",
-    ".ttf": "application/font-sfnt",
-    ".eot": "application/vnd.ms-fontobject",
-    ".svg": "image/svg+xml",
+    ".html": "text/html",
+    ".txt": "text/plain",
     ".ico": "image/x-icon",
     ".png": "image/png",
     ".jpg": "image/jpeg",
-    ".json": "application/json",
-    ".dll": "application/octet-stream",
-    ".wasm": "application/wasm",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".eot": "application/vnd.ms-fontobject",
+    ".ttf": "application/font-sfnt",
     ".dat": "application/octet-stream",
     ".blat": "application/octet-stream",
-    ".br": "application/x-br"
+    ".br": "application/octet-stream",
+    ".gz": "application/gzip"
   },
+  "routes": [
+    {
+      "route": "/api/*",
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/hubs/*",
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/_framework/*",
+      "headers": {
+        "Cache-Control": "public, max-age=604800, immutable"
+      }
+    },
+    {
+      "route": "/_content/*",
+      "headers": {
+        "Cache-Control": "public, max-age=604800, immutable"
+      }
+    },
+    {
+      "route": "/*",
+      "rewrite": "/index.html"
+    }
+  ],
   "globalHeaders": {
-    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https://*.azurestaticapps.net https://*.azure.com https://*.applicationinsights.azure.com wss://*.azurestaticapps.net;",
+    "content-security-policy": "default-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src *; img-src 'self' data: https:; font-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://login.microsoftonline.com",
     "X-Content-Type-Options": "nosniff"
   }
 } 
