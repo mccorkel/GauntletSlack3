@@ -1,5 +1,8 @@
 {
-  "dependencies": {
-    "quill": "^2.0.3"
+  "name": "gauntletslack3",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "dotnet publish -c Release",
+    "build:azure": "dotnet publish -c Release"
   }
 }

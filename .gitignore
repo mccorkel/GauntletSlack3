@@ -10,3 +10,4 @@
 /GauntletSlack3.Api/appsettings.json
 /GauntletSlack3/appsettings.json
 /GauntletSlack3/wwwroot/appsettings.json
+killRunningDebugs.sh
