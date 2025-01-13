@@ -11,8 +11,31 @@ using GauntletSlack3.Api.Services.Interfaces;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Serilog.AspNetCore;
 using Serilog.Sinks.ApplicationInsights;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog with Application Insights - prioritize environment variable
+var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING") 
+    ?? builder.Configuration["ApplicationInsights:ConnectionString"];
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.ApplicationInsights(
+        new TelemetryConfiguration { ConnectionString = appInsightsConnectionString },
+        TelemetryConverter.Traces)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// Add Application Insights
+builder.Services.AddApplicationInsightsTelemetry(options => 
+{
+    options.ConnectionString = appInsightsConnectionString;
+});
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -71,19 +94,23 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add DbContext
+// Add DbContext - prioritize environment variables
+var dbConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrEmpty(dbConnectionString))
+{
+    Log.Error("Database connection string is missing");
+    throw new InvalidOperationException("Database connection string must be configured");
+}
+
+Log.Information("Database connection configured from: {Source}", 
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") != null 
+        ? "Environment Variable" 
+        : "appsettings.json");
+
 builder.Services.AddDbContext<SlackDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
-builder.Services.AddApplicationInsightsTelemetry();
-
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .ReadFrom.Configuration(context.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-);
+    options.UseSqlServer(dbConnectionString));
 
 builder.Services.AddHostedService<BackgroundMessageProcessor>();
 builder.Services.AddScoped<IMessageQueueService, MessageQueueService>();
@@ -95,6 +122,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    Log.Information("Using development configuration");
+}
+else 
+{
+    app.UseSerilogRequestLogging();
+    Log.Information("Using production configuration");
 }
 
 // Move CORS before HTTPS redirection
