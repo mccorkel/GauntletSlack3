@@ -1,10 +1,16 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/_framework/*", "/css/*", "/js/*", "/lib/*"]
+    "exclude": ["/_framework/*", "/css/*", "/*.{ico,png,jpg,gif}", "/*.{js,css}"]
   },
   "mimeTypes": {
     ".dll": "application/octet-stream",
-    ".wasm": "application/wasm"
+    ".wasm": "application/wasm",
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".json": "application/json"
+  },
+  "globalHeaders": {
+    "content-security-policy": "default-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src *;"
   }
 } 

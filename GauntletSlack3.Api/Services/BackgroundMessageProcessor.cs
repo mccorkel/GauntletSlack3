@@ -4,47 +4,53 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using GauntletSlack3.Api.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace GauntletSlack3.Api.Services
 {
     public class BackgroundMessageProcessor : BackgroundService
     {
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BackgroundMessageProcessor> _logger;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IConfiguration _configuration;
 
         public BackgroundMessageProcessor(
-            IServiceScopeFactory scopeFactory,
-            ILogger<BackgroundMessageProcessor> logger)
+            ILogger<BackgroundMessageProcessor> logger,
+            IServiceProvider serviceProvider,
+            IConfiguration configuration)
         {
-            _scopeFactory = scopeFactory;
             _logger = logger;
+            _serviceProvider = serviceProvider;
+            _configuration = configuration;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                try
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    using (var scope = _scopeFactory.CreateScope())
+                    using (var scope = _serviceProvider.CreateScope())
                     {
                         var messageQueueService = scope.ServiceProvider.GetRequiredService<IMessageQueueService>();
-                        // Your processing logic here
-                        await ProcessMessages(messageQueueService, stoppingToken);
+                        await messageQueueService.ProcessPendingMessagesAsync();
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error occurred while processing messages");
-                }
 
-                await Task.Delay(1000, stoppingToken); // Or whatever delay you want
+                    // Wait before processing next batch
+                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                }
             }
-        }
-
-        private async Task ProcessMessages(IMessageQueueService messageQueueService, CancellationToken stoppingToken)
-        {
-            // Your existing message processing logic here
+            catch (OperationCanceledException)
+            {
+                // Normal shutdown, log at debug level
+                _logger.LogDebug("Background service shutting down normally");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in background message processor");
+                // Don't rethrow - let the service continue running
+            }
         }
     }
 } 

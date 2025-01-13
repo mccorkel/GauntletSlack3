@@ -45,9 +45,10 @@ jobs:
           app_location: "./GauntletSlack3"
           api_location: "./GauntletSlack3.Api"
           output_location: "wwwroot"
-          app_artifact_location: "bin/Release/net9.0/publish/wwwroot"
-          api_build_command: "dotnet publish -c Release"
-          app_build_command: "dotnet publish -c Release"
+          app_artifact_location: "wwwroot"
+          skip_app_build: false
+          is_static_export: false
+          app_build_command: "dotnet publish -c Release -o publish"
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
 
