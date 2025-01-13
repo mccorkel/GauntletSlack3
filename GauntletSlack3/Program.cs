@@ -14,10 +14,23 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure HttpClient with base address
-builder.Services.AddScoped(sp => new HttpClient
+builder.Services.AddScoped(sp => 
 {
-    BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress)
+    var httpClient = new HttpClient
+    {
+        BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress)
+    };
+    
+    // Add default headers for all requests
+    httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+    
+    return httpClient;
 });
+
+// Add auth message handler
+builder.Services.AddScoped<CustomAuthorizationMessageHandler>();
+builder.Services.AddHttpClient("AuthenticatedClient")
+    .AddHttpMessageHandler<CustomAuthorizationMessageHandler>();
 
 // Register services
 builder.Services.AddScoped<IMessageService, MessageService>();

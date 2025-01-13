@@ -31,7 +31,12 @@
     {
       "route": "/api/*",
       "methods": ["GET", "POST", "PUT", "DELETE"],
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/hubs/*",
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "allowedRoles": ["anonymous", "authenticated"]
     },
     {
       "route": "/_framework/*",
